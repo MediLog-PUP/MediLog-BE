@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediLog - PUP Clinic Portal</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Tailwind Config for PUP Colors -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        pup: {
+                            maroon: '#880000',
+                            maroonDark: '#660000',
+                            gold: '#F1B500',
+                            goldLight: '#FDE68A',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom pattern background for hero */
+        .bg-pattern {
+            background-image: radial-gradient(#880000 0.5px, transparent 0.5px), radial-gradient(#880000 0.5px, #ffffff 0.5px);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+            opacity: 0.03;
+        }
+
+        /* Page Transition Styles */
+        body {
+            opacity: 0;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .page-exit {
+            animation: fadeOut 0.3s ease-in forwards !important;
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body class="font-sans antialiased text-gray-800 bg-gray-50">
+
+    <!-- Navigation -->
+    <nav class="bg-white border-b border-gray-100 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20">
+                <div class="flex items-center gap-3">
+                    <!-- Logo / Brand -->
+                    <div class="flex-shrink-0 flex items-center bg-pup-maroon text-white p-2 rounded-lg">
+                        <i data-lucide="clipboard-heart" class="h-8 w-8 text-pup-gold"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-2xl tracking-tight text-pup-maroon">MediLog</span>
+                        <span class="block text-xs font-medium text-gray-500 -mt-1">PUP Clinic Portal</span>
+                    </div>
+                </div>
+                
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#" class="text-gray-600 hover:text-pup-maroon font-medium transition-colors">Home</a>
+                    <a href="#services" class="text-gray-600 hover:text-pup-maroon font-medium transition-colors">Services</a>
+                    <a href="#about" class="text-gray-600 hover:text-pup-maroon font-medium transition-colors">About</a>
+                    <a href="index.html" class="px-5 py-2.5 rounded-full bg-pup-maroon text-white font-medium hover:bg-pup-maroonDark transition-colors shadow-sm">
+                        Patient Login
+                    </a>
+                </div>
+
+                <!-- Mobile menu button -->
+                <div class="flex items-center md:hidden">
+                    <button class="text-gray-500 hover:text-gray-900 focus:outline-none p-2">
+                        <i data-lucide="menu" class="h-6 w-6"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="relative bg-white overflow-hidden">
+        <div class="absolute inset-0 bg-pattern pointer-events-none"></div>
+        <div class="max-w-7xl mx-auto">
+            <div class="relative z-10 pb-8 bg-transparent sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32 pt-16 sm:pt-24 lg:pt-32 px-4 sm:px-6 lg:px-8">
+                
+                <div class="sm:text-center lg:text-left">
+                    <div class="inline-flex items-center px-3 py-1 rounded-full bg-pup-goldLight text-pup-maroon text-sm font-semibold mb-6">
+                        <span class="flex h-2 w-2 rounded-full bg-pup-maroon mr-2"></span>
+                        Official Health Portal of the Iskolars ng Bayan
+                    </div>
+                    <h1 class="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
+                        <span class="block xl:inline">Your Health &</span>
+                        <span class="block text-pup-maroon">Wellness Priority</span>
+                    </h1>
+                    <p class="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
+                        Book appointments, access your health records, and connect with PUP's healthcare professionals easily through MediLog. Choose a service below to get started.
+                    </p>
+                    
+                    <!-- Main Call to Action Buttons -->
+                    <div class="mt-8 sm:mt-10 sm:flex sm:justify-center lg:justify-start gap-4">
+                        <div class="rounded-md shadow">
+                            <a href="#medical" class="w-full flex items-center justify-center px-8 py-4 border border-transparent text-lg font-semibold rounded-xl text-white bg-pup-maroon hover:bg-pup-maroonDark transition-all duration-200 transform hover:-translate-y-1 hover:shadow-lg shadow-pup-maroon/30">
+                                <!-- Medical Cross SVG -->
+                                <svg class="w-6 h-6 mr-3 text-pup-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H13V5a2 2 0 00-2-2H11a2 2 0 00-2 2v6H3a2 2 0 00-2 2v2a2 2 0 002 2h6v6a2 2 0 002 2h2a2 2 0 002-2v-6h6a2 2 0 002-2v-2a2 2 0 00-2-2z"></path></svg>
+                                Medical
+                            </a>
+                        </div>
+                        <div class="mt-3 sm:mt-0">
+                            <a href="#dental" class="w-full flex items-center justify-center px-8 py-4 border-2 border-pup-maroon text-lg font-semibold rounded-xl text-pup-maroon bg-white hover:bg-gray-50 transition-all duration-200 transform hover:-translate-y-1 hover:shadow-md">
+                                <!-- Tooth/Dental SVG -->
+                                <svg class="w-6 h-6 mr-3 text-pup-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.618 5.984A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016zM12 9v2m0 4h.01"></path></svg>
+                                Dental
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Hero Image Right Side -->
+        <div class="hidden lg:block lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2">
+            <img class="h-56 w-full object-cover sm:h-72 md:h-96 lg:w-full lg:h-full opacity-90 rounded-bl-[100px]" src="https://images.unsplash.com/photo-1579684385127-1ef15d508118?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" alt="Medical Clinic Staff">
+            <div class="absolute inset-0 bg-gradient-to-r from-white via-white/40 to-transparent"></div>
+        </div>
+    </div>
+
+    <!-- Features / Services Overview Section -->
+    <div id="services" class="py-16 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <h2 class="text-base text-pup-maroon font-semibold tracking-wide uppercase">Clinic Services</h2>
+                <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                    Comprehensive care for students
+                </p>
+                <p class="mt-4 max-w-2xl text-xl text-gray-500 mx-auto">
+                    We offer a wide range of free services to ensure the well-being of the PUP community.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Card 1 -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 hover:shadow-md transition-shadow">
+                    <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-6">
+                        <i data-lucide="stethoscope" class="h-6 w-6 text-pup-maroon"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">General Consultations</h3>
+                    <p class="text-gray-600">Free medical check-ups and diagnosis for common illnesses for all enrolled students.</p>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 hover:shadow-md transition-shadow">
+                    <div class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center mb-6">
+                        <i data-lucide="activity" class="h-6 w-6 text-pup-gold"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">First Aid & Emergency</h3>
+                    <p class="text-gray-600">Immediate response and initial treatment for injuries or medical emergencies on campus.</p>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 hover:shadow-md transition-shadow">
+                    <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mb-6">
+                        <i data-lucide="smile" class="h-6 w-6 text-blue-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Dental Extraction</h3>
+                    <p class="text-gray-600">Basic dental procedures including extraction and oral health consultations.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white border-t-4 border-pup-maroon">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <div class="flex items-center gap-2 mb-4">
+                        <i data-lucide="clipboard-heart" class="h-6 w-6 text-pup-gold"></i>
+                        <span class="font-bold text-xl tracking-tight text-white">MediLog</span>
+                    </div>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        The official clinic portal for the Polytechnic University of the Philippines. Empowering student health through accessible digital logs and scheduling.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Quick Links</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-pup-gold transition-colors">Book Appointment</a></li>
+                        <li><a href="#" class="hover:text-pup-gold transition-colors">Medical Records</a></li>
+                        <li><a href="#" class="hover:text-pup-gold transition-colors">Clinic Schedule</a></li>
+                        <li><a href="#" class="hover:text-pup-gold transition-colors">Contact Administrator</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Clinic Hours</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li class="flex justify-between"><span>Monday - Friday:</span> <span>8:00 AM - 5:00 PM</span></li>
+                        <li class="flex justify-between"><span>Saturday:</span> <span>8:00 AM - 12:00 NN</span></li>
+                        <li class="flex justify-between text-pup-maroon font-medium"><span>Sunday:</span> <span>Closed</span></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-8 pt-8 border-t border-gray-800 text-sm text-gray-500 text-center flex flex-col md:flex-row justify-between items-center gap-4">
+                <p>&copy; 2026 MediLog - Polytechnic University of the Philippines. All rights reserved.</p>
+                <div class="flex space-x-4">
+                    <a href="#" class="text-gray-500 hover:text-white"><i data-lucide="facebook" class="h-5 w-5"></i></a>
+                    <a href="#" class="text-gray-500 hover:text-white"><i data-lucide="mail" class="h-5 w-5"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Initialize Icons -->
+    <script>
+        lucide.createIcons();
+
+        // Page Transition Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const links = document.querySelectorAll('a[href]');
+            links.forEach(link => {
+                link.addEventListener('click', e => {
+                    const href = link.getAttribute('href');
+                    // Skip transition for hashes, new tabs, or empty links
+                    if (!href || href.startsWith('#') || link.getAttribute('target') === '_blank') return;
+                    
+                    e.preventDefault();
+                    document.body.classList.add('page-exit');
+                    setTimeout(() => {
+                        window.location.href = href;
+                    }, 250); // Navigate right before animation fully ends
+                });
+            });
+        });
+    </script>
+</body>
+</html>

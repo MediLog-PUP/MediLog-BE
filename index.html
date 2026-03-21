@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Role - MediLog</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Tailwind Config for PUP Colors -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        pup: {
+                            maroon: '#880000',
+                            maroonDark: '#660000',
+                            gold: '#F1B500',
+                            goldLight: '#FDE68A',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Page Transition Styles -->
+    <style>
+        body {
+            opacity: 0;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .page-exit {
+            animation: fadeOut 0.3s ease-in forwards !important;
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body class="font-sans antialiased text-gray-800 bg-gray-50 min-h-screen flex flex-col">
+
+    <!-- Main Content Area -->
+    <main class="flex-grow flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 w-full">
+        <div class="w-full max-w-4xl mx-auto">
+            
+            <!-- Header Section -->
+            <div class="text-center mb-12 mt-8">
+                <div class="inline-flex items-center justify-center bg-pup-maroon text-white p-3 rounded-2xl mb-6 shadow-sm">
+                    <i data-lucide="clipboard-heart" class="h-10 w-10 text-pup-gold"></i>
+                </div>
+                <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-3">Welcome to MediLog</h1>
+                <p class="text-lg text-gray-500">Please select your role to access your portal</p>
+            </div>
+
+            <!-- Role Selection Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 mb-12">
+                
+                <!-- Student Option -->
+                <a href="studentlogin.html" class="group bg-white border-2 border-gray-100 rounded-3xl p-8 sm:p-10 hover:border-pup-maroon hover:shadow-xl transition-all duration-300 relative overflow-hidden flex flex-col items-center text-center transform hover:-translate-y-1">
+                    <div class="absolute top-0 left-0 w-full h-2 bg-pup-maroon transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
+                    
+                    <div class="w-24 h-24 bg-red-50 text-pup-maroon rounded-full flex items-center justify-center mb-6 group-hover:bg-pup-maroon group-hover:text-white transition-colors duration-300">
+                        <i data-lucide="graduation-cap" class="h-12 w-12"></i>
+                    </div>
+                    
+                    <h2 class="text-2xl font-bold text-gray-900 mb-3 group-hover:text-pup-maroon transition-colors">Iskolar ng Bayan</h2>
+                    <p class="text-gray-500 mb-8 leading-relaxed">Login as a student to book clinic appointments, request medical clearances, and view your personal health records.</p>
+                    
+                    <div class="mt-auto w-full py-3 px-6 rounded-xl bg-gray-50 text-pup-maroon font-semibold group-hover:bg-pup-maroon group-hover:text-white transition-colors flex items-center justify-center">
+                        Student Login <i data-lucide="arrow-right" class="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </a>
+
+                <!-- Faculty / Staff Option -->
+                <a href="facultylogin.html" class="group bg-white border-2 border-gray-100 rounded-3xl p-8 sm:p-10 hover:border-pup-gold hover:shadow-xl transition-all duration-300 relative overflow-hidden flex flex-col items-center text-center transform hover:-translate-y-1">
+                    <div class="absolute top-0 left-0 w-full h-2 bg-pup-gold transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
+                    
+                    <div class="w-24 h-24 bg-yellow-50 text-pup-gold rounded-full flex items-center justify-center mb-6 group-hover:bg-pup-gold group-hover:text-white transition-colors duration-300">
+                        <i data-lucide="briefcase" class="h-12 w-12"></i>
+                    </div>
+                    
+                    <h2 class="text-2xl font-bold text-gray-900 mb-3 group-hover:text-pup-gold transition-colors">Faculty & Staff</h2>
+                    <p class="text-gray-500 mb-8 leading-relaxed">Login as an employee to access annual physical exam results, schedule consultations, and manage workplace wellness logs.</p>
+                    
+                    <div class="mt-auto w-full py-3 px-6 rounded-xl bg-gray-50 text-pup-gold font-semibold group-hover:bg-pup-gold group-hover:text-white transition-colors flex items-center justify-center">
+                        Employee Login <i data-lucide="arrow-right" class="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </a>
+
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white border-t-4 border-pup-maroon mt-auto w-full">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <div class="flex items-center gap-2 mb-4">
+                        <i data-lucide="clipboard-heart" class="h-6 w-6 text-pup-gold"></i>
+                        <span class="font-bold text-xl tracking-tight text-white">MediLog</span>
+                    </div>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        The official clinic portal for the Polytechnic University of the Philippines. Empowering student health through accessible digital logs and scheduling.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Quick Links</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-pup-gold transition-colors">Book Appointment</a></li>
+                        <li><a href="#" class="hover:text-pup-gold transition-colors">Medical Records</a></li>
+                        <li><a href="#" class="hover:text-pup-gold transition-colors">Clinic Schedule</a></li>
+                        <li><a href="#" class="hover:text-pup-gold transition-colors">Contact Administrator</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Clinic Hours</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li class="flex justify-between"><span>Monday - Friday:</span> <span>8:00 AM - 5:00 PM</span></li>
+                        <li class="flex justify-between"><span>Saturday:</span> <span>8:00 AM - 12:00 NN</span></li>
+                        <li class="flex justify-between text-pup-maroon font-medium"><span>Sunday:</span> <span>Closed</span></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-8 pt-8 border-t border-gray-800 text-sm text-gray-500 text-center flex flex-col md:flex-row justify-between items-center gap-4">
+                <p>&copy; 2026 MediLog - Polytechnic University of the Philippines. All rights reserved.</p>
+                <div class="flex space-x-4">
+                    <a href="#" class="text-gray-500 hover:text-white"><i data-lucide="facebook" class="h-5 w-5"></i></a>
+                    <a href="#" class="text-gray-500 hover:text-white"><i data-lucide="mail" class="h-5 w-5"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Initialize Icons -->
+    <script>
+        lucide.createIcons();
+
+        // Page Transition Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const links = document.querySelectorAll('a[href]');
+            links.forEach(link => {
+                link.addEventListener('click', e => {
+                    const href = link.getAttribute('href');
+                    // Skip transition for hashes, new tabs, or empty links
+                    if (!href || href.startsWith('#') || link.getAttribute('target') === '_blank') return;
+                    
+                    e.preventDefault();
+                    document.body.classList.add('page-exit');
+                    setTimeout(() => {
+                        window.location.href = href;
+                    }, 250); // Navigate right before animation fully ends
+                });
+            });
+        });
+    </script>
+</body>
+</html>

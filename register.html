@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - MediLog</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Tailwind Config for PUP Colors -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        pup: {
+                            maroon: '#880000',
+                            maroonDark: '#660000',
+                            gold: '#F1B500',
+                            goldLight: '#FDE68A',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Page Transition Styles -->
+    <style>
+        body {
+            opacity: 0;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .page-exit {
+            animation: fadeOut 0.3s ease-in forwards !important;
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-10px); }
+        }
+        /* Custom scrollbar for modal and right column */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+            border-radius: 8px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #d1d5db; 
+            border-radius: 8px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af; 
+        }
+    </style>
+</head>
+<body class="font-sans antialiased text-gray-800 bg-white min-h-screen flex">
+
+    <!-- Left Side: Branding / Image (Hidden on mobile) -->
+    <div class="hidden lg:flex lg:w-1/2 relative bg-pup-maroon overflow-hidden items-center justify-center">
+        <!-- Background Overlay/Pattern -->
+        <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80')] bg-cover bg-center opacity-20 mix-blend-overlay"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-pup-maroonDark/90 via-pup-maroon/80 to-pup-maroon/50"></div>
+        
+        <div class="relative z-10 px-12 text-center text-white max-w-lg">
+            <div class="inline-flex items-center justify-center bg-white/10 backdrop-blur-sm p-4 rounded-2xl mb-8 border border-white/20">
+                <i data-lucide="user-plus" class="h-16 w-16 text-pup-gold"></i>
+            </div>
+            <h2 class="text-4xl font-extrabold mb-4 tracking-tight">Join MediLog</h2>
+            <p class="text-lg text-white/80 leading-relaxed">
+                Create your account today to easily schedule appointments, request medical clearances, and view your health records in one centralized portal.
+            </p>
+        </div>
+    </div>
+
+    <!-- Right Side: Registration Form -->
+    <div class="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 relative h-screen overflow-y-auto custom-scroll">
+        <div class="w-full max-w-md py-8">
+            
+            <!-- Mobile Header -->
+            <div class="lg:hidden text-center mb-8">
+                <div class="inline-flex items-center justify-center bg-pup-maroon text-white p-3 rounded-xl mb-4 shadow-sm">
+                    <i data-lucide="user-plus" class="h-8 w-8 text-pup-gold"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900">Create Account</h2>
+            </div>
+
+            <!-- Back Link -->
+            <a href="index.html" class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-pup-maroon transition-colors mb-8 group">
+                <i data-lucide="arrow-left" class="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform"></i> Back to Login Options
+            </a>
+
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">Register</h1>
+                <p class="text-gray-500">Fill in your details to create your portal account.</p>
+            </div>
+
+            <form action="#" method="POST" class="space-y-5">
+                <!-- Full Name -->
+                <div>
+                    <label for="full-name" class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i data-lucide="user" class="h-5 w-5 text-gray-400"></i>
+                        </div>
+                        <input type="text" id="full-name" name="full-name" class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm transition-colors" placeholder="Juan Dela Cruz" required>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <!-- ID Number Field -->
+                    <div>
+                        <label for="id-number" class="block text-sm font-medium text-gray-700 mb-2">ID Number</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i data-lucide="badge-info" class="h-5 w-5 text-gray-400"></i>
+                            </div>
+                            <input type="text" id="id-number" name="id-number" class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm transition-colors" placeholder="e.g. 2021-0000" required>
+                        </div>
+                    </div>
+
+                    <!-- Role Selection -->
+                    <div>
+                        <label for="role" class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i data-lucide="users" class="h-5 w-5 text-gray-400"></i>
+                            </div>
+                            <select id="role" name="role" class="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm transition-colors appearance-none bg-white" required>
+                                <option value="" disabled selected>Select Role</option>
+                                <option value="student">Student</option>
+                                <option value="faculty">Faculty / Staff</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <i data-lucide="chevron-down" class="h-5 w-5 text-gray-400"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Email Field -->
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2">University Email</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i data-lucide="mail" class="h-5 w-5 text-gray-400"></i>
+                        </div>
+                        <input type="email" id="email" name="email" class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm transition-colors" placeholder="jdelacruz@iskolarngbayan.pup.edu.ph" required>
+                    </div>
+                </div>
+
+                <!-- Password Field -->
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i data-lucide="lock" class="h-5 w-5 text-gray-400"></i>
+                        </div>
+                        <input type="password" id="password" name="password" class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm transition-colors" placeholder="••••••••" required>
+                    </div>
+                </div>
+
+                <!-- Terms and Conditions -->
+                <div class="flex items-start pt-2">
+                    <div class="flex items-center h-5">
+                        <input id="terms" name="terms" type="checkbox" class="h-4 w-4 text-pup-maroon focus:ring-pup-maroon border-gray-300 rounded cursor-pointer" required>
+                    </div>
+                    <label for="terms" class="ml-2 block text-sm text-gray-700">
+                        I agree to the <button type="button" onclick="openTermsModal()" class="text-pup-maroon font-semibold hover:text-pup-maroonDark hover:underline focus:outline-none transition-colors">Terms and Conditions</button>
+                    </label>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="w-full flex justify-center items-center py-3.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-semibold text-white bg-pup-maroon hover:bg-pup-maroonDark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pup-maroon transition-all transform hover:-translate-y-0.5 mt-4">
+                    Create Account
+                    <i data-lucide="arrow-right" class="ml-2 h-4 w-4"></i>
+                </button>
+            </form>
+
+            <div class="mt-8 text-center text-sm text-gray-500">
+                Already have an account? <a href="index.html" class="font-medium text-pup-maroon hover:text-pup-maroonDark">Login here</a>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Terms and Conditions Modal -->
+    <div id="termsModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Background overlay -->
+            <div id="modalOverlay" class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity opacity-0 duration-300" aria-hidden="true" onclick="closeTermsModal()"></div>
+
+            <!-- Vertical centering trick -->
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            
+            <!-- Modal Panel -->
+            <div id="modalPanel" class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95 duration-300">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-50 sm:mx-0 sm:h-10 sm:w-10">
+                            <i data-lucide="file-text" class="h-5 w-5 text-pup-maroon"></i>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-bold text-gray-900" id="modal-title">Terms and Conditions</h3>
+                            <div class="mt-3 bg-gray-50 rounded-lg p-4 h-48 overflow-y-auto custom-scroll border border-gray-100">
+                                <p class="text-sm text-gray-600 space-y-3">
+                                    <span class="block">Welcome to MediLog. By registering an account, you agree to be bound by the following policies:</span>
+                                    
+                                    <strong class="block text-gray-800 mt-2">1. Privacy & Confidentiality</strong>
+                                    <span class="block">All user medical records and personal data are kept strictly confidential in compliance with the Data Privacy Act of 2012 (R.A. 10173).</span>
+                                    
+                                    <strong class="block text-gray-800 mt-2">2. Accuracy of Information</strong>
+                                    <span class="block">You agree to provide true, accurate, and complete information regarding your health status and logs submitted to the clinic.</span>
+                                    
+                                    <strong class="block text-gray-800 mt-2">3. Account Security</strong>
+                                    <span class="block">You are strictly responsible for maintaining the confidentiality of your login credentials. Do not share your access with anyone.</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-100">
+                    <button type="button" onclick="closeTermsModal()" class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-5 py-2.5 bg-pup-maroon text-base font-medium text-white hover:bg-pup-maroonDark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pup-maroon sm:ml-3 sm:w-auto sm:text-sm transition-colors">
+                        I Understand
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Initialization Scripts -->
+    <script>
+        // Render Icons
+        lucide.createIcons();
+
+        // Modal Logic
+        const modal = document.getElementById('termsModal');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const modalPanel = document.getElementById('modalPanel');
+
+        function openTermsModal() {
+            modal.classList.remove('hidden');
+            void modal.offsetWidth; // Trigger reflow
+            modalOverlay.classList.remove('opacity-0');
+            modalOverlay.classList.add('opacity-100');
+            modalPanel.classList.remove('opacity-0', 'translate-y-4', 'sm:scale-95');
+            modalPanel.classList.add('opacity-100', 'translate-y-0', 'sm:scale-100');
+        }
+
+        function closeTermsModal() {
+            modalOverlay.classList.remove('opacity-100');
+            modalOverlay.classList.add('opacity-0');
+            modalPanel.classList.remove('opacity-100', 'translate-y-0', 'sm:scale-100');
+            modalPanel.classList.add('opacity-0', 'translate-y-4', 'sm:scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        // Page Transition Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const links = document.querySelectorAll('a[href]');
+            links.forEach(link => {
+                link.addEventListener('click', e => {
+                    const href = link.getAttribute('href');
+                    if (!href || href.startsWith('#') || link.getAttribute('target') === '_blank') return;
+                    
+                    e.preventDefault();
+                    document.body.classList.add('page-exit');
+                    setTimeout(() => {
+                        window.location.href = href;
+                    }, 250);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
