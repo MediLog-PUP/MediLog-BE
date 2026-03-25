@@ -63,7 +63,7 @@
         }
     </style>
 </head>
-<body class="font-sans antialiased text-gray-800 bg-gray-50">
+<body class="font-sans antialiased text-gray-800 bg-gray-50 relative">
 
     <!-- Navigation -->
     <nav class="bg-white border-b border-gray-100 sticky top-0 z-50">
@@ -86,7 +86,7 @@
                     <a href="#services" class="text-gray-600 hover:text-pup-maroon font-medium transition-colors">Services</a>
                     <a href="#about" class="text-gray-600 hover:text-pup-maroon font-medium transition-colors">About</a>
                     <a href="index.html" class="px-5 py-2.5 rounded-full bg-pup-maroon text-white font-medium hover:bg-pup-maroonDark transition-colors shadow-sm">
-                        Patient Login
+                        Portal Login
                     </a>
                 </div>
 
@@ -116,23 +116,22 @@
                         <span class="block text-pup-maroon">Wellness Priority</span>
                     </h1>
                     <p class="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
-                        Book appointments, access your health records, and connect with PUP's healthcare professionals easily through MediLog. Choose a service below to get started.
+                        Book appointments, manage your personal health records, view request statuses, and connect with PUP's healthcare professionals easily through MediLog.
                     </p>
                     
                     <!-- Main Call to Action Buttons -->
                     <div class="mt-8 sm:mt-10 sm:flex sm:justify-center lg:justify-start gap-4">
                         <div class="rounded-md shadow">
-                            <a href="#medical" class="w-full flex items-center justify-center px-8 py-4 border border-transparent text-lg font-semibold rounded-xl text-white bg-pup-maroon hover:bg-pup-maroonDark transition-all duration-200 transform hover:-translate-y-1 hover:shadow-lg shadow-pup-maroon/30">
+                            <a href="#services" class="w-full flex items-center justify-center px-8 py-4 border border-transparent text-lg font-semibold rounded-xl text-white bg-pup-maroon hover:bg-pup-maroonDark transition-all duration-200 transform hover:-translate-y-1 hover:shadow-lg shadow-pup-maroon/30">
                                 <!-- Medical Cross SVG -->
                                 <svg class="w-6 h-6 mr-3 text-pup-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H13V5a2 2 0 00-2-2H11a2 2 0 00-2 2v6H3a2 2 0 00-2 2v2a2 2 0 002 2h6v6a2 2 0 002 2h2a2 2 0 002-2v-6h6a2 2 0 002-2v-2a2 2 0 00-2-2z"></path></svg>
-                                Medical
+                                View Services
                             </a>
                         </div>
                         <div class="mt-3 sm:mt-0">
-                            <a href="#dental" class="w-full flex items-center justify-center px-8 py-4 border-2 border-pup-maroon text-lg font-semibold rounded-xl text-pup-maroon bg-white hover:bg-gray-50 transition-all duration-200 transform hover:-translate-y-1 hover:shadow-md">
-                                <!-- Tooth/Dental SVG -->
-                                <svg class="w-6 h-6 mr-3 text-pup-maroon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.618 5.984A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016zM12 9v2m0 4h.01"></path></svg>
-                                Dental
+                            <a href="index.html" class="w-full flex items-center justify-center px-8 py-4 border-2 border-pup-maroon text-lg font-semibold rounded-xl text-pup-maroon bg-white hover:bg-gray-50 transition-all duration-200 transform hover:-translate-y-1 hover:shadow-md">
+                                <i data-lucide="log-in" class="h-6 w-6 mr-3"></i>
+                                Portal Login
                             </a>
                         </div>
                     </div>
@@ -156,40 +155,55 @@
                     Comprehensive care for students
                 </p>
                 <p class="mt-4 max-w-2xl text-xl text-gray-500 mx-auto">
-                    We offer a wide range of free services to ensure the well-being of the PUP community.
+                    We offer a wide range of free services to ensure the well-being of the PUP community through accessible digital systems.
                 </p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 <!-- Card 1 -->
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 hover:shadow-md transition-shadow">
                     <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-6">
-                        <i data-lucide="stethoscope" class="h-6 w-6 text-pup-maroon"></i>
+                        <i data-lucide="calendar-check" class="h-6 w-6 text-pup-maroon"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">General Consultations</h3>
-                    <p class="text-gray-600">Free medical check-ups and diagnosis for common illnesses for all enrolled students.</p>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Book Appointments</h3>
+                    <p class="text-gray-600">Easily schedule and view your appointments for general medical check-ups and consultations.</p>
                 </div>
 
                 <!-- Card 2 -->
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 hover:shadow-md transition-shadow">
                     <div class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center mb-6">
-                        <i data-lucide="activity" class="h-6 w-6 text-pup-gold"></i>
+                        <i data-lucide="folder-clock" class="h-6 w-6 text-pup-gold"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">First Aid & Emergency</h3>
-                    <p class="text-gray-600">Immediate response and initial treatment for injuries or medical emergencies on campus.</p>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Health Records & Status</h3>
+                    <p class="text-gray-600">Securely edit, update, and track the real-time status of your medical requests and records.</p>
                 </div>
 
                 <!-- Card 3 -->
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 hover:shadow-md transition-shadow">
                     <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mb-6">
-                        <i data-lucide="smile" class="h-6 w-6 text-blue-600"></i>
+                        <i data-lucide="file-bar-chart-2" class="h-6 w-6 text-blue-600"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Dental Extraction</h3>
-                    <p class="text-gray-600">Basic dental procedures including extraction and oral health consultations.</p>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Reports & Summaries</h3>
+                    <p class="text-gray-600">Generate clear summaries of medical assessments based on the verified data provided.</p>
+                </div>
+
+                <!-- Card 4 -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 hover:shadow-md transition-shadow">
+                    <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-6">
+                        <i data-lucide="message-square-text" class="h-6 w-6 text-green-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Inquiries & Info</h3>
+                    <p class="text-gray-600">Access helpful health advisories and swiftly get responses to inquiries regarding clinic services.</p>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Floating Help Button -->
+    <button class="fixed bottom-6 right-6 bg-pup-maroon text-white p-4 rounded-full shadow-lg hover:bg-pup-maroonDark transition-transform transform hover:-translate-y-1 hover:shadow-xl z-50 flex items-center justify-center group" aria-label="Help and Inquiries">
+        <i data-lucide="message-circle-question" class="h-6 w-6"></i>
+        <span class="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-300 ease-in-out font-medium group-hover:ml-2 group-hover:mr-1 text-sm">Send an Inquiry</span>
+    </button>
 
     <!-- Footer -->
     <footer class="bg-gray-900 text-white border-t-4 border-pup-maroon">

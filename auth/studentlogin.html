@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Faculty & Staff Login - MediLog</title>
+    <title>Student Login - MediLog</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -71,21 +71,21 @@
         }
     </style>
 </head>
-<body class="font-sans antialiased text-gray-800 bg-white min-h-screen flex">
+<body class="font-sans antialiased text-gray-800 bg-white min-h-screen flex relative">
 
     <!-- Left Side: Branding / Image (Hidden on mobile) -->
-    <div class="hidden lg:flex lg:w-1/2 relative bg-gray-900 overflow-hidden items-center justify-center">
+    <div class="hidden lg:flex lg:w-1/2 relative bg-pup-maroon overflow-hidden items-center justify-center">
         <!-- Background Overlay/Pattern -->
-        <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1551076805-e1869033e561?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80')] bg-cover bg-center opacity-30 mix-blend-overlay"></div>
-        <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/90 to-pup-maroon/60 border-r-4 border-pup-gold"></div>
+        <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80')] bg-cover bg-center opacity-20 mix-blend-overlay"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-pup-maroonDark/90 to-pup-maroon/80"></div>
         
         <div class="relative z-10 px-12 text-center text-white max-w-lg">
-            <div class="inline-flex items-center justify-center bg-pup-gold/20 backdrop-blur-sm p-4 rounded-2xl mb-8 border border-pup-gold/30">
-                <i data-lucide="briefcase-medical" class="h-16 w-16 text-pup-gold"></i>
+            <div class="inline-flex items-center justify-center bg-white/10 backdrop-blur-sm p-4 rounded-2xl mb-8 border border-white/20">
+                <i data-lucide="clipboard-heart" class="h-16 w-16 text-pup-gold"></i>
             </div>
-            <h2 class="text-4xl font-extrabold mb-4 tracking-tight text-white">Faculty & Staff</h2>
-            <p class="text-lg text-gray-300 leading-relaxed">
-                Manage your annual physical examinations, view health advisories, and schedule consultations seamlessly with the PUP Medical Team.
+            <h2 class="text-4xl font-extrabold mb-4 tracking-tight">Iskolar ng Bayan</h2>
+            <p class="text-lg text-white/80 leading-relaxed">
+                Welcome to your secure health portal. Access your medical records, book clinic appointments, and request clearances anytime, anywhere.
             </p>
         </div>
     </div>
@@ -96,31 +96,31 @@
             
             <!-- Mobile Header (Visible only on small screens) -->
             <div class="lg:hidden text-center mb-8">
-                <div class="inline-flex items-center justify-center bg-gray-900 text-pup-gold p-3 rounded-xl mb-4 shadow-sm border border-gray-800">
-                    <i data-lucide="briefcase-medical" class="h-8 w-8"></i>
+                <div class="inline-flex items-center justify-center bg-pup-maroon text-white p-3 rounded-xl mb-4 shadow-sm">
+                    <i data-lucide="clipboard-heart" class="h-8 w-8 text-pup-gold"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-gray-900">Employee Portal</h2>
+                <h2 class="text-2xl font-bold text-gray-900">Student Portal</h2>
             </div>
 
             <!-- Back Link -->
-            <a href="index.html" class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-pup-gold transition-colors mb-8">
+            <a href="../index.html" class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-pup-maroon transition-colors mb-8">
                 <i data-lucide="arrow-left" class="mr-2 h-4 w-4"></i> Back to Role Selection
             </a>
 
             <div>
-                <h1 class="text-3xl font-bold text-gray-900 mb-2">Employee Login</h1>
-                <p class="text-gray-500 mb-8">Please enter your employee credentials to continue.</p>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">Welcome back!</h1>
+                <p class="text-gray-500 mb-8">Please enter your student credentials to continue.</p>
             </div>
 
             <form action="#" method="POST" class="space-y-6">
-                <!-- Employee Number Field -->
+                <!-- Student Number Field -->
                 <div>
-                    <label for="employee-number" class="block text-sm font-medium text-gray-700 mb-2">Employee ID</label>
+                    <label for="student-number" class="block text-sm font-medium text-gray-700 mb-2">Student Number</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i data-lucide="badge-info" class="h-5 w-5 text-gray-400"></i>
+                            <i data-lucide="user" class="h-5 w-5 text-gray-400"></i>
                         </div>
-                        <input type="text" id="employee-number" name="employee-number" class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-pup-gold focus:border-pup-gold sm:text-sm transition-colors" placeholder="e.g. EMP-12345" required>
+                        <input type="text" id="student-number" name="student-number" class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm transition-colors" placeholder="e.g. 2021-00000-MN-0" required>
                     </div>
                 </div>
 
@@ -128,38 +128,49 @@
                 <div>
                     <div class="flex items-center justify-between mb-2">
                         <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                        <a href="#" class="text-sm font-medium text-gray-600 hover:text-pup-gold transition-colors">Forgot password?</a>
+                        <a href="forgotpassword.html" class="text-sm font-medium text-pup-maroon hover:text-pup-maroonDark transition-colors">Forgot password?</a>
                     </div>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <i data-lucide="lock" class="h-5 w-5 text-gray-400"></i>
                         </div>
-                        <input type="password" id="password" name="password" class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-pup-gold focus:border-pup-gold sm:text-sm transition-colors" placeholder="••••••••" required>
+                        <input type="password" id="password" name="password" class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm transition-colors" placeholder="••••••••" required>
                     </div>
                 </div>
 
                 <!-- Terms and Conditions -->
                 <div class="flex items-start">
                     <div class="flex items-center h-5">
-                        <input id="terms" name="terms" type="checkbox" class="h-4 w-4 text-pup-gold focus:ring-pup-gold border-gray-300 rounded cursor-pointer" required>
+                        <input id="terms" name="terms" type="checkbox" class="h-4 w-4 text-pup-maroon focus:ring-pup-maroon border-gray-300 rounded cursor-pointer" required>
                     </div>
                     <label for="terms" class="ml-2 block text-sm text-gray-700">
-                        I agree to the <button type="button" onclick="openTermsModal()" class="text-gray-800 font-semibold hover:text-pup-gold hover:underline focus:outline-none transition-colors">Terms and Conditions</button>
+                        I agree to the <button type="button" onclick="openTermsModal()" class="text-pup-maroon font-semibold hover:text-pup-maroonDark hover:underline focus:outline-none transition-colors">Terms and Conditions</button>
                     </label>
                 </div>
 
                 <!-- Submit Button -->
-                <button type="submit" class="w-full flex justify-center items-center py-3.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-semibold text-gray-900 bg-pup-gold hover:bg-[#dca500] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pup-gold transition-all transform hover:-translate-y-0.5">
+                <button type="submit" class="w-full flex justify-center items-center py-3.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-semibold text-white bg-pup-maroon hover:bg-pup-maroonDark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pup-maroon transition-all transform hover:-translate-y-0.5">
                     Sign In to MediLog
                     <i data-lucide="log-in" class="ml-2 h-4 w-4"></i>
                 </button>
+
+                <!-- Security Badge -->
+                <div class="flex justify-center items-center mt-3 text-xs text-gray-500">
+                    <i data-lucide="shield-check" class="h-4 w-4 mr-1 text-green-600"></i> Secure, End-to-End Encrypted & Auditable
+                </div>
             </form>
 
             <div class="mt-8 text-center text-sm text-gray-500">
-                Don't have an account? <a href="register.html" class="font-medium text-gray-800 hover:text-pup-gold">Register here</a>
+                Don't have an account? <a href="register.html" class="font-medium text-pup-maroon hover:text-pup-maroonDark">Register here</a>
             </div>
         </div>
     </div>
+
+    <!-- Floating Help Button -->
+    <button class="fixed bottom-6 right-6 bg-pup-maroon text-white p-4 rounded-full shadow-lg hover:bg-pup-maroonDark transition-transform transform hover:-translate-y-1 hover:shadow-xl z-50 flex items-center justify-center group" aria-label="Help and Inquiries">
+        <i data-lucide="message-circle-question" class="h-6 w-6"></i>
+        <span class="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-300 ease-in-out font-medium group-hover:ml-2 group-hover:mr-1 text-sm">Send an Inquiry</span>
+    </button>
 
     <!-- Terms and Conditions Modal -->
     <div id="termsModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
@@ -174,8 +185,8 @@
             <div id="modalPanel" class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95 duration-300">
                 <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <div class="sm:flex sm:items-start">
-                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-yellow-50 sm:mx-0 sm:h-10 sm:w-10">
-                            <i data-lucide="file-text" class="h-5 w-5 text-pup-gold"></i>
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-50 sm:mx-0 sm:h-10 sm:w-10">
+                            <i data-lucide="file-text" class="h-5 w-5 text-pup-maroon"></i>
                         </div>
                         <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
                             <h3 class="text-lg leading-6 font-bold text-gray-900" id="modal-title">Terms and Conditions</h3>
@@ -184,23 +195,23 @@
                                     <span class="block">Welcome to MediLog. By accessing or using this portal, you agree to be bound by the following policies:</span>
                                     
                                     <strong class="block text-gray-800 mt-2">1. Privacy & Confidentiality</strong>
-                                    <span class="block">All employee medical records and personal data are kept strictly confidential in compliance with the Data Privacy Act of 2012 (R.A. 10173).</span>
+                                    <span class="block">All student medical records and personal data are kept strictly confidential in compliance with the Data Privacy Act of 2012 (R.A. 10173).</span>
                                     
                                     <strong class="block text-gray-800 mt-2">2. Accuracy of Information</strong>
-                                    <span class="block">You agree to provide true, accurate, and complete information regarding your health status and logs submitted to the HR and Medical departments.</span>
+                                    <span class="block">You agree to provide true, accurate, and complete information regarding your health status and medical logs submitted to the clinic.</span>
                                     
-                                    <strong class="block text-gray-800 mt-2">3. Account Security</strong>
-                                    <span class="block">You are strictly responsible for maintaining the confidentiality of your employee login credentials. Do not share your access with unauthorized personnel.</span>
+                                    <strong class="block text-gray-800 mt-2">3. Authenticity, Tracking, and Security</strong>
+                                    <span class="block">You are strictly responsible for maintaining the confidentiality of your credentials. To ensure security and authenticity, the system actively traces actions and identifies responsible personnel or users for modifications to medical records.</span>
                                     
                                     <strong class="block text-gray-800 mt-2">4. Official Usage Only</strong>
-                                    <span class="block">This portal is meant exclusively for official university medical logging, clearance generation, and scheduling. Misuse may result in disciplinary administrative actions.</span>
+                                    <span class="block">This portal is meant exclusively for official university medical logging, inquiries, and scheduling. Misuse may result in disciplinary action.</span>
                                 </p>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-100">
-                    <button type="button" onclick="closeTermsModal()" class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-5 py-2.5 bg-gray-900 text-base font-medium text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 sm:ml-3 sm:w-auto sm:text-sm transition-colors">
+                    <button type="button" onclick="closeTermsModal()" class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-5 py-2.5 bg-pup-maroon text-base font-medium text-white hover:bg-pup-maroonDark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pup-maroon sm:ml-3 sm:w-auto sm:text-sm transition-colors">
                         I Understand
                     </button>
                 </div>

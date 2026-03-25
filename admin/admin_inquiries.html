@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inquiries - Admin MediLog</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: { pup: { maroon: '#880000', maroonDark: '#660000', gold: '#F1B500', goldLight: '#FDE68A' } }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { opacity: 0; animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .page-exit { animation: fadeOut 0.3s ease-in forwards !important; }
+        @keyframes fadeOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-10px); } }
+        
+        /* Hide scrollbar for mobile bottom nav */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="font-sans antialiased text-gray-800 bg-white flex h-screen overflow-hidden">
+
+    <!-- Sidebar (Admin variant) -->
+    <aside class="hidden md:flex flex-col w-64 bg-gray-900 text-white h-full shadow-xl z-20 flex-shrink-0">
+        <div class="p-6 flex items-center gap-3 border-b border-gray-800">
+            <div class="bg-pup-gold text-gray-900 p-2 rounded-lg"><i data-lucide="shield-plus" class="h-6 w-6"></i></div>
+            <span class="font-bold text-xl tracking-tight text-white">MediLog Admin</span>
+        </div>
+
+        <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+            <a href="admin_dashboard.html" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors">
+                <i data-lucide="layout-dashboard" class="h-5 w-5"></i> Overview
+            </a>
+            <a href="medicine_inventory.html" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors">
+                <i data-lucide="pill" class="h-5 w-5"></i> Inventory
+            </a>
+            <a href="patient_records.html" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors">
+                <i data-lucide="users" class="h-5 w-5"></i> Patient Records
+            </a>
+            <a href="admin_appointments.html" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors">
+                <i data-lucide="calendar" class="h-5 w-5"></i> Appointments
+            </a>
+            <a href="admin_clearance.html" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors">
+                <i data-lucide="file-check-2" class="h-5 w-5"></i> Clearance Requests
+                <span class="ml-auto bg-pup-gold text-gray-900 text-xs font-bold px-2 py-0.5 rounded-full">5</span>
+            </a>
+            <a href="admin_inquiries.html" class="flex items-center gap-3 px-4 py-3 bg-pup-maroon text-white rounded-xl font-medium transition-colors shadow-sm">
+                <i data-lucide="message-square" class="h-5 w-5"></i> Inquiries
+            </a>
+            <a href="admin_profile.html" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors">
+                <i data-lucide="user-cog" class="h-5 w-5"></i> Profile
+            </a>
+        </nav>
+        
+        <div class="p-4 border-t border-gray-800">
+            <button onclick="openLogoutModal()" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-red-900/50 hover:text-red-400 rounded-xl font-medium transition-colors w-full text-left">
+                <i data-lucide="log-out" class="h-5 w-5"></i> Sign Out
+            </button>
+        </div>
+    </aside>
+
+    <!-- Mobile Bottom Navigation (Scrollable) -->
+    <nav class="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 z-50 overflow-x-auto no-scrollbar shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <div class="flex items-center w-max px-2 min-w-full justify-between">
+            <a href="admin_dashboard.html" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors">
+                <i data-lucide="layout-dashboard" class="h-5 w-5"></i>
+                <span class="text-[10px] font-medium mt-1">Home</span>
+            </a>
+            <a href="medicine_inventory.html" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors">
+                <i data-lucide="pill" class="h-5 w-5"></i>
+                <span class="text-[10px] font-medium mt-1">Inventory</span>
+            </a>
+            <a href="patient_records.html" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors">
+                <i data-lucide="users" class="h-5 w-5"></i>
+                <span class="text-[10px] font-medium mt-1">Patients</span>
+            </a>
+            <a href="admin_appointments.html" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors">
+                <i data-lucide="calendar" class="h-5 w-5"></i>
+                <span class="text-[10px] font-medium mt-1">Schedule</span>
+            </a>
+            <a href="admin_clearance.html" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors relative">
+                <i data-lucide="file-check-2" class="h-5 w-5"></i>
+                <span class="text-[10px] font-medium mt-1">Clearances</span>
+                <span class="absolute top-2 right-4 h-2 w-2 bg-pup-gold rounded-full"></span>
+            </a>
+            <a href="admin_inquiries.html" class="flex flex-col items-center p-2.5 min-w-[72px] text-pup-maroon transition-colors">
+                <i data-lucide="message-square" class="h-5 w-5"></i>
+                <span class="text-[10px] font-medium mt-1">Inquiries</span>
+            </a>
+            <a href="admin_profile.html" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors">
+                <i data-lucide="user-cog" class="h-5 w-5"></i>
+                <span class="text-[10px] font-medium mt-1">Profile</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Content (Split view for messaging) -->
+    <main class="flex-1 flex flex-col md:flex-row h-full overflow-hidden bg-white pb-[72px] md:pb-0">
+        
+        <!-- Conversation List -->
+        <div class="w-full md:w-1/3 lg:w-1/4 border-r border-gray-200 flex flex-col h-full bg-gray-50">
+            <!-- Mobile Header inside list for responsive flow -->
+            <div class="p-4 border-b border-gray-200 bg-white flex justify-between items-center z-10 shadow-sm">
+                <h2 class="text-xl font-bold text-gray-900">Student Inquiries</h2>
+                <div class="flex items-center gap-2">
+                    <a href="admin_notifications.html" class="text-gray-500 hover:text-pup-maroon transition-colors p-2 bg-gray-50 hover:bg-red-50 rounded-full border border-gray-200 hover:border-red-100 relative">
+                        <i data-lucide="bell" class="h-5 w-5"></i>
+                        <span class="absolute top-0 right-0 h-2.5 w-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+                    </a>
+                    <!-- Mobile Sign Out Top Header -->
+                    <button onclick="openLogoutModal()" class="md:hidden text-gray-500 hover:text-red-600 transition-colors p-2 bg-gray-50 rounded-full border border-gray-200">
+                        <i data-lucide="log-out" class="h-5 w-5"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-3 bg-gray-50 border-b border-gray-200">
+                <div class="relative">
+                    <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4"></i>
+                    <input type="text" placeholder="Search messages..." class="w-full pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-pup-maroon focus:border-pup-maroon">
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto">
+                <!-- Unread Chat -->
+                <div class="p-4 border-b border-gray-100 bg-red-50 cursor-pointer flex items-center gap-3 border-l-4 border-l-pup-maroon">
+                    <div class="w-10 h-10 rounded-full bg-red-200 text-pup-maroon flex justify-center items-center flex-shrink-0 font-bold">JD</div>
+                    <div class="flex-1 overflow-hidden">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-bold text-gray-900 text-sm">Juan Dela Cruz</span>
+                            <span class="text-xs text-pup-maroon font-bold">10:42 AM</span>
+                        </div>
+                        <p class="text-xs text-gray-800 font-medium truncate">Hello, I would like to follow up on my OJT...</p>
+                    </div>
+                </div>
+                <!-- Read Chat -->
+                <div class="p-4 border-b border-gray-100 hover:bg-white cursor-pointer flex items-center gap-3 transition-colors border-l-4 border-l-transparent">
+                    <div class="w-10 h-10 rounded-full bg-gray-200 text-gray-700 flex justify-center items-center flex-shrink-0 font-bold">MC</div>
+                    <div class="flex-1 overflow-hidden">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-semibold text-gray-900 text-sm">Maria Clara (Faculty)</span>
+                            <span class="text-xs text-gray-400">Yesterday</span>
+                        </div>
+                        <p class="text-xs text-gray-500 truncate">Thank you for the update. I will come by tomorrow.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="hidden md:flex flex-1 flex-col h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-gray-50/50">
+            <!-- Chat Header -->
+            <div class="p-4 border-b border-gray-200 bg-white flex items-center justify-between shadow-sm z-10">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-red-100 text-pup-maroon flex justify-center items-center font-bold">JD</div>
+                    <div>
+                        <h2 class="font-bold text-gray-900">Juan Dela Cruz</h2>
+                        <span class="text-xs text-gray-500">Student • BSIT • 2021-01234-MN-0</span>
+                    </div>
+                </div>
+                <button class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border border-gray-200 flex items-center gap-2">
+                    <i data-lucide="folder-open" class="h-4 w-4"></i> View Patient File
+                </button>
+            </div>
+            
+            <!-- Chat Messages -->
+            <div class="flex-1 overflow-y-auto p-6 space-y-4">
+                <div class="text-center text-xs text-gray-400 my-4 font-medium uppercase tracking-wider">Today</div>
+                
+                <!-- Patient Message (Incoming) -->
+                <div class="flex justify-start">
+                    <div class="bg-white border border-gray-100 shadow-sm rounded-2xl rounded-tl-sm px-4 py-3 max-w-[75%] text-sm text-gray-800">
+                        Hello, I would like to follow up on my OJT medical clearance request submitted yesterday. Is there anything else I need to provide?
+                        <div class="text-[10px] text-gray-400 mt-1 text-right">10:42 AM</div>
+                    </div>
+                </div>
+                
+                <!-- Admin Message (Outgoing - Drafted) -->
+                <div class="flex justify-end">
+                    <div class="bg-pup-maroon text-white rounded-2xl rounded-tr-sm px-4 py-3 max-w-[75%] text-sm shadow-md">
+                        Good day, Juan! We have reviewed your request. Your clearance has been approved and signed by the physician. You can now download the official PDF file in your Medical Clearance tab.
+                        <div class="text-[10px] text-white/70 mt-1 text-right">Just now</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Message Input Area -->
+            <div class="p-4 border-t border-gray-200 bg-white">
+                <div class="flex gap-2">
+                    <button class="p-3 text-gray-400 hover:text-pup-maroon hover:bg-gray-50 rounded-xl transition-colors">
+                        <i data-lucide="paperclip" class="h-5 w-5"></i>
+                    </button>
+                    <div class="relative flex-1">
+                        <input type="text" placeholder="Type your response to Juan..." class="w-full pl-4 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon text-sm bg-gray-50">
+                    </div>
+                    <button class="bg-pup-maroon hover:bg-pup-maroonDark text-white px-5 py-2 rounded-xl transition-colors shadow-sm flex justify-center items-center gap-2 font-semibold text-sm">
+                        Send <i data-lucide="send" class="h-4 w-4"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Logout Confirmation Modal -->
+    <div id="logoutModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div id="logoutModalOverlay" class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity opacity-0 duration-300" aria-hidden="true" onclick="closeLogoutModal()"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div id="logoutModalPanel" class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-sm w-full opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95 duration-300">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <i data-lucide="log-out" class="h-6 w-6 text-red-600"></i>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                            <h3 class="text-lg leading-6 font-bold text-gray-900" id="modal-title">Sign Out</h3>
+                            <div class="mt-2"><p class="text-sm text-gray-500">Are you sure you want to sign out? You will need to log in again to access the admin portal.</p></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 flex flex-col sm:flex-row-reverse gap-2">
+                    <a href="../index.html" class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:w-auto sm:text-sm transition-colors text-center">Sign Out</a>
+                    <button type="button" onclick="closeLogoutModal()" class="w-full inline-flex justify-center rounded-xl border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:w-auto sm:text-sm transition-colors">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        function openLogoutModal() {
+            const modal = document.getElementById('logoutModal');
+            const overlay = document.getElementById('logoutModalOverlay');
+            const panel = document.getElementById('logoutModalPanel');
+            modal.classList.remove('hidden');
+            void modal.offsetWidth; 
+            overlay.classList.remove('opacity-0'); overlay.classList.add('opacity-100');
+            panel.classList.remove('opacity-0', 'translate-y-4', 'sm:scale-95'); panel.classList.add('opacity-100', 'translate-y-0', 'sm:scale-100');
+        }
+        function closeLogoutModal() {
+            const modal = document.getElementById('logoutModal');
+            const overlay = document.getElementById('logoutModalOverlay');
+            const panel = document.getElementById('logoutModalPanel');
+            overlay.classList.remove('opacity-100'); overlay.classList.add('opacity-0');
+            panel.classList.remove('opacity-100', 'translate-y-0', 'sm:scale-100'); panel.classList.add('opacity-0', 'translate-y-4', 'sm:scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('a[href]').forEach(link => {
+                link.addEventListener('click', e => {
+                    const href = link.getAttribute('href');
+                    if (!href || href.startsWith('#') || link.getAttribute('target') === '_blank') return;
+                    e.preventDefault();
+                    document.body.classList.add('page-exit');
+                    setTimeout(() => window.location.href = href, 250);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

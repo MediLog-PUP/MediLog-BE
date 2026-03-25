@@ -56,7 +56,7 @@
         }
     </style>
 </head>
-<body class="font-sans antialiased text-gray-800 bg-gray-50 min-h-screen flex flex-col">
+<body class="font-sans antialiased text-gray-800 bg-gray-50 min-h-screen flex flex-col relative">
 
     <!-- Main Content Area -->
     <main class="flex-grow flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 w-full">
@@ -68,14 +68,14 @@
                     <i data-lucide="clipboard-heart" class="h-10 w-10 text-pup-gold"></i>
                 </div>
                 <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-3">Welcome to MediLog</h1>
-                <p class="text-lg text-gray-500">Please select your role to access your portal</p>
+                <p class="text-lg text-gray-500">Please select your role to access your secure portal</p>
             </div>
 
             <!-- Role Selection Cards -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 mb-12">
                 
                 <!-- Student Option -->
-                <a href="studentlogin.html" class="group bg-white border-2 border-gray-100 rounded-3xl p-8 sm:p-10 hover:border-pup-maroon hover:shadow-xl transition-all duration-300 relative overflow-hidden flex flex-col items-center text-center transform hover:-translate-y-1">
+                <a href="auth/studentlogin.html" class="group bg-white border-2 border-gray-100 rounded-3xl p-8 sm:p-10 hover:border-pup-maroon hover:shadow-xl transition-all duration-300 relative overflow-hidden flex flex-col items-center text-center transform hover:-translate-y-1">
                     <div class="absolute top-0 left-0 w-full h-2 bg-pup-maroon transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
                     
                     <div class="w-24 h-24 bg-red-50 text-pup-maroon rounded-full flex items-center justify-center mb-6 group-hover:bg-pup-maroon group-hover:text-white transition-colors duration-300">
@@ -83,7 +83,7 @@
                     </div>
                     
                     <h2 class="text-2xl font-bold text-gray-900 mb-3 group-hover:text-pup-maroon transition-colors">Iskolar ng Bayan</h2>
-                    <p class="text-gray-500 mb-8 leading-relaxed">Login as a student to book clinic appointments, request medical clearances, and view your personal health records.</p>
+                    <p class="text-gray-500 mb-8 leading-relaxed">Login as a student to book appointments, update your personal health information, and view the status of your medical requests.</p>
                     
                     <div class="mt-auto w-full py-3 px-6 rounded-xl bg-gray-50 text-pup-maroon font-semibold group-hover:bg-pup-maroon group-hover:text-white transition-colors flex items-center justify-center">
                         Student Login <i data-lucide="arrow-right" class="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform"></i>
@@ -91,7 +91,7 @@
                 </a>
 
                 <!-- Faculty / Staff Option -->
-                <a href="facultylogin.html" class="group bg-white border-2 border-gray-100 rounded-3xl p-8 sm:p-10 hover:border-pup-gold hover:shadow-xl transition-all duration-300 relative overflow-hidden flex flex-col items-center text-center transform hover:-translate-y-1">
+                <a href="auth/facultylogin.html" class="group bg-white border-2 border-gray-100 rounded-3xl p-8 sm:p-10 hover:border-pup-gold hover:shadow-xl transition-all duration-300 relative overflow-hidden flex flex-col items-center text-center transform hover:-translate-y-1">
                     <div class="absolute top-0 left-0 w-full h-2 bg-pup-gold transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
                     
                     <div class="w-24 h-24 bg-yellow-50 text-pup-gold rounded-full flex items-center justify-center mb-6 group-hover:bg-pup-gold group-hover:text-white transition-colors duration-300">
@@ -99,7 +99,7 @@
                     </div>
                     
                     <h2 class="text-2xl font-bold text-gray-900 mb-3 group-hover:text-pup-gold transition-colors">Faculty & Staff</h2>
-                    <p class="text-gray-500 mb-8 leading-relaxed">Login as an employee to access annual physical exam results, schedule consultations, and manage workplace wellness logs.</p>
+                    <p class="text-gray-500 mb-8 leading-relaxed">Login as an employee to access health advisories, securely manage workplace wellness logs, and generate medical reports.</p>
                     
                     <div class="mt-auto w-full py-3 px-6 rounded-xl bg-gray-50 text-pup-gold font-semibold group-hover:bg-pup-gold group-hover:text-white transition-colors flex items-center justify-center">
                         Employee Login <i data-lucide="arrow-right" class="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform"></i>
@@ -110,6 +110,12 @@
 
         </div>
     </main>
+
+    <!-- Floating Help Button -->
+    <button class="fixed bottom-6 right-6 bg-pup-maroon text-white p-4 rounded-full shadow-lg hover:bg-pup-maroonDark transition-transform transform hover:-translate-y-1 hover:shadow-xl z-50 flex items-center justify-center group" aria-label="Help and Inquiries">
+        <i data-lucide="message-circle-question" class="h-6 w-6"></i>
+        <span class="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-300 ease-in-out font-medium group-hover:ml-2 group-hover:mr-1 text-sm">Send an Inquiry</span>
+    </button>
 
     <!-- Footer -->
     <footer class="bg-gray-900 text-white border-t-4 border-pup-maroon mt-auto w-full">
