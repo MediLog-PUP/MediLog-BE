@@ -87,6 +87,8 @@ try {
 </head>
 <body class="font-sans antialiased text-gray-800 bg-gray-50 flex h-screen overflow-hidden">
 
+    <?php include '../global_loader.php'; ?>
+
     <aside class="hidden md:flex flex-col w-64 bg-gray-900 text-white h-full shadow-xl z-20 flex-shrink-0">
         <div class="p-6 flex items-center gap-3 border-b border-gray-800">
             <div class="bg-pup-gold text-gray-900 p-2 rounded-lg"><i data-lucide="shield-plus" class="h-6 w-6"></i></div>
@@ -96,6 +98,7 @@ try {
             <a href="admin_dashboard.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="layout-dashboard" class="h-5 w-5"></i> Overview</a>
             <a href="medicine_inventory.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="pill" class="h-5 w-5"></i> Inventory</a>
             <a href="patient_records.php" class="flex items-center gap-3 px-4 py-3 bg-pup-maroon text-white rounded-xl font-medium transition-colors shadow-sm"><i data-lucide="users" class="h-5 w-5"></i> Patient Records</a>
+            <a href="admin_treatment_records.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="clipboard-list" class="h-5 w-5"></i> Treatment Records</a>
             <a href="admin_appointments.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="calendar" class="h-5 w-5"></i> Appointments</a>
             <a href="admin_clearance.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="file-check-2" class="h-5 w-5"></i> Clearances</a>
             <a href="admin_inquiries.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="message-square" class="h-5 w-5"></i> Inquiries</a>
@@ -111,6 +114,7 @@ try {
             <a href="admin_dashboard.php" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors"><i data-lucide="layout-dashboard" class="h-5 w-5"></i><span class="text-[10px] font-medium mt-1">Home</span></a>
             <a href="medicine_inventory.php" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors"><i data-lucide="pill" class="h-5 w-5"></i><span class="text-[10px] font-medium mt-1">Inventory</span></a>
             <a href="patient_records.php" class="flex flex-col items-center p-2.5 min-w-[72px] text-pup-maroon transition-colors"><i data-lucide="users" class="h-5 w-5"></i><span class="text-[10px] font-medium mt-1">Patients</span></a>
+            <a href="admin_treatment_records.php" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors"><i data-lucide="clipboard-list" class="h-5 w-5"></i><span class="text-[10px] font-medium mt-1">Treatments</span></a>
             <a href="admin_appointments.php" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors"><i data-lucide="calendar" class="h-5 w-5"></i><span class="text-[10px] font-medium mt-1">Schedule</span></a>
             <a href="admin_clearance.php" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors"><i data-lucide="file-check-2" class="h-5 w-5"></i><span class="text-[10px] font-medium mt-1">Clearances</span></a>
             <a href="admin_inquiries.php" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors"><i data-lucide="message-square" class="h-5 w-5"></i><span class="text-[10px] font-medium mt-1">Inquiries</span></a>
@@ -398,7 +402,7 @@ try {
                     </div>
                 </div>
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 flex flex-col sm:flex-row-reverse gap-2">
-                    <a href="../logout.php" class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:w-auto sm:text-sm transition-colors text-center">Sign Out</a>
+                    <a href="../auth/logout.php" class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:w-auto sm:text-sm transition-colors text-center">Sign Out</a>
                     <button type="button" onclick="closeLogoutModal()" class="w-full inline-flex justify-center rounded-xl border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:w-auto sm:text-sm transition-colors">Cancel</button>
                 </div>
             </div>
@@ -407,101 +411,8 @@ try {
 
     <script>
         lucide.createIcons();
-
-        // View Modal Logic
-        function openViewModal(btn) {
-            const data = JSON.parse(btn.getAttribute('data-patient'));
-            document.getElementById('view-name').textContent = data.full_name || 'N/A';
-            document.getElementById('view-id').textContent = data.id_number || 'N/A';
-            document.getElementById('view-email').textContent = data.email || 'N/A';
-            document.getElementById('view-course').textContent = (data.course || 'N/A') + ' ' + (data.section || '');
-            document.getElementById('view-phone').textContent = data.phone_number || 'N/A';
-            document.getElementById('view-address').textContent = data.address || 'N/A';
-            document.getElementById('view-dob').textContent = data.dob || 'N/A';
-            document.getElementById('view-gender').textContent = data.gender || 'N/A';
-            document.getElementById('view-blood').textContent = data.blood_type || 'Unknown';
-            document.getElementById('view-allergies').textContent = data.allergies || 'None';
-            document.getElementById('view-em-name').textContent = data.emergency_contact_name || 'N/A';
-            document.getElementById('view-em-phone').textContent = data.emergency_contact_phone || 'N/A';
-
-            const m = document.getElementById('viewModal');
-            m.classList.remove('hidden');
-            setTimeout(() => {
-                document.getElementById('viewModalOverlay').classList.replace('opacity-0', 'opacity-100');
-                document.getElementById('viewModalPanel').classList.replace('opacity-0', 'opacity-100');
-                document.getElementById('viewModalPanel').classList.replace('translate-y-4', 'translate-y-0');
-                document.getElementById('viewModalPanel').classList.replace('sm:scale-95', 'sm:scale-100');
-            }, 10);
-        }
-        function closeViewModal() {
-            document.getElementById('viewModalOverlay').classList.replace('opacity-100', 'opacity-0');
-            document.getElementById('viewModalPanel').classList.replace('opacity-100', 'opacity-0');
-            document.getElementById('viewModalPanel').classList.replace('translate-y-0', 'translate-y-4');
-            document.getElementById('viewModalPanel').classList.replace('sm:scale-100', 'sm:scale-95');
-            setTimeout(() => document.getElementById('viewModal').classList.add('hidden'), 300);
-        }
-
-        // Edit Modal Logic
-        function openEditModal(btn) {
-            const data = JSON.parse(btn.getAttribute('data-patient'));
-            document.getElementById('edit-id').value = data.id;
-            
-            // Populate photo and all details
-            document.getElementById('edit-pic').src = data.resolved_pic || 'https://ui-avatars.com/api/?name=Student&background=880000&color=fff';
-            document.getElementById('edit-email').value = data.email || '';
-            document.getElementById('edit-name').value = data.full_name || '';
-            document.getElementById('edit-course').value = data.course || '';
-            document.getElementById('edit-section').value = data.section || '';
-            document.getElementById('edit-phone').value = data.phone_number || '';
-            document.getElementById('edit-blood').value = data.blood_type || '';
-            document.getElementById('edit-dob').value = data.dob || '';
-            document.getElementById('edit-gender').value = data.gender || '';
-            document.getElementById('edit-address').value = data.address || '';
-            document.getElementById('edit-allergies').value = data.allergies || '';
-            document.getElementById('edit-em-name').value = data.emergency_contact_name || '';
-            document.getElementById('edit-em-phone').value = data.emergency_contact_phone || '';
-
-            const m = document.getElementById('editModal');
-            m.classList.remove('hidden');
-            setTimeout(() => {
-                document.getElementById('editModalOverlay').classList.replace('opacity-0', 'opacity-100');
-                document.getElementById('editModalPanel').classList.replace('opacity-0', 'opacity-100');
-                document.getElementById('editModalPanel').classList.replace('translate-y-4', 'translate-y-0');
-                document.getElementById('editModalPanel').classList.replace('sm:scale-95', 'sm:scale-100');
-            }, 10);
-        }
-        function closeEditModal() {
-            document.getElementById('editModalOverlay').classList.replace('opacity-100', 'opacity-0');
-            document.getElementById('editModalPanel').classList.replace('opacity-100', 'opacity-0');
-            document.getElementById('editModalPanel').classList.replace('translate-y-0', 'translate-y-4');
-            document.getElementById('editModalPanel').classList.replace('sm:scale-100', 'sm:scale-95');
-            setTimeout(() => document.getElementById('editModal').classList.add('hidden'), 300);
-        }
-
-        // Delete Modal Logic
-        function openDeleteModal(id) {
-            document.getElementById('delete-id').value = id;
-            const m = document.getElementById('deleteModal');
-            m.classList.remove('hidden');
-            setTimeout(() => {
-                document.getElementById('deleteModalOverlay').classList.replace('opacity-0', 'opacity-100');
-                document.getElementById('deleteModalPanel').classList.replace('opacity-0', 'opacity-100');
-                document.getElementById('deleteModalPanel').classList.replace('translate-y-4', 'translate-y-0');
-                document.getElementById('deleteModalPanel').classList.replace('sm:scale-95', 'sm:scale-100');
-            }, 10);
-        }
-        function closeDeleteModal() {
-            document.getElementById('deleteModalOverlay').classList.replace('opacity-100', 'opacity-0');
-            document.getElementById('deleteModalPanel').classList.replace('opacity-100', 'opacity-0');
-            document.getElementById('deleteModalPanel').classList.replace('translate-y-0', 'translate-y-4');
-            document.getElementById('deleteModalPanel').classList.replace('sm:scale-100', 'sm:scale-95');
-            setTimeout(() => document.getElementById('deleteModal').classList.add('hidden'), 300);
-        }
-
-        // Logout Modals & Routing
         function openLogoutModal() { const m = document.getElementById('logoutModal'); m.classList.remove('hidden'); setTimeout(() => { document.getElementById('logoutModalOverlay').classList.replace('opacity-0', 'opacity-100'); document.getElementById('logoutModalPanel').classList.replace('opacity-0', 'opacity-100'); document.getElementById('logoutModalPanel').classList.replace('translate-y-4', 'translate-y-0'); document.getElementById('logoutModalPanel').classList.replace('sm:scale-95', 'sm:scale-100'); }, 10); }
         function closeLogoutModal() { document.getElementById('logoutModalOverlay').classList.replace('opacity-100', 'opacity-0'); document.getElementById('logoutModalPanel').classList.replace('opacity-100', 'opacity-0'); document.getElementById('logoutModalPanel').classList.replace('translate-y-0', 'translate-y-4'); document.getElementById('logoutModalPanel').classList.replace('sm:scale-100', 'sm:scale-95'); setTimeout(() => document.getElementById('logoutModal').classList.add('hidden'), 300); }
-        document.addEventListener('DOMContentLoaded', () => { document.querySelectorAll('a[href]:not([href^="#"]):not([target="_blank"])').forEach(link => { link.addEventListener('click', e => { const href = link.getAttribute('href'); if (!href || href === "javascript:void(0);") return; e.preventDefault(); document.body.classList.add('page-exit'); setTimeout(() => window.location.href = href, 250); }); }); });
     </script>
 </body>
 </html>

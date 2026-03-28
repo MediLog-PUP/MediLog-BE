@@ -72,11 +72,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['service'], $_POST['app
         @keyframes fadeOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-10px); } }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        input[type="radio"]:checked + div { border-color: #880000; background-color: #fef2f2; }
-        input[type="radio"]:checked + div .radio-indicator { background-color: #880000; border-color: #880000; }
     </style>
 </head>
 <body class="font-sans antialiased text-gray-800 bg-gray-50 flex h-screen overflow-hidden">
+
+    <?php include '../global_loader.php'; ?>
 
     <aside class="hidden md:flex flex-col w-64 bg-gray-900 text-white h-full shadow-xl z-20 flex-shrink-0">
         <div class="p-6 flex items-center gap-3 border-b border-gray-800">
@@ -248,17 +248,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['service'], $_POST['app
         lucide.createIcons();
         function openLogoutModal() { document.getElementById('logoutModalOverlay').classList.replace('opacity-0', 'opacity-100'); document.getElementById('logoutModalPanel').classList.replace('opacity-0', 'opacity-100'); document.getElementById('logoutModalPanel').classList.replace('translate-y-4', 'translate-y-0'); document.getElementById('logoutModalPanel').classList.replace('sm:scale-95', 'sm:scale-100'); document.getElementById('logoutModal').classList.remove('hidden'); }
         function closeLogoutModal() { document.getElementById('logoutModalOverlay').classList.replace('opacity-100', 'opacity-0'); document.getElementById('logoutModalPanel').classList.replace('opacity-100', 'opacity-0'); document.getElementById('logoutModalPanel').classList.replace('translate-y-0', 'translate-y-4'); document.getElementById('logoutModalPanel').classList.replace('sm:scale-100', 'sm:scale-95'); setTimeout(() => document.getElementById('logoutModal').classList.add('hidden'), 300); }
-        
-        document.addEventListener('DOMContentLoaded', () => { 
-            document.querySelectorAll('a[href]:not([href^="#"]):not([target="_blank"]):not([onclick])').forEach(link => { 
-                link.addEventListener('click', e => { 
-                    const href = link.getAttribute('href'); 
-                    if (!href || href === "javascript:void(0);") return; 
-                    e.preventDefault(); document.body.classList.add('page-exit'); 
-                    setTimeout(() => window.location.href = href, 250); 
-                }); 
-            }); 
-        });
     </script>
 </body>
 </html>

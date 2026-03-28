@@ -10,6 +10,22 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'student') {
 
 $user_id = $_SESSION['user_id'];
 
+// Auto-add new columns to health_records table if they don't exist
+$new_columns = [
+    'time_in' => 'TIME',
+    'time_out' => 'TIME',
+    'complaints' => 'TEXT',
+    'treatment' => 'VARCHAR(255)',
+    'quantity' => 'INT'
+];
+foreach ($new_columns as $col => $type) {
+    try {
+        $pdo->exec("ALTER TABLE health_records ADD COLUMN $col $type DEFAULT NULL");
+    } catch (PDOException $e) {
+        // Ignore if column already exists
+    }
+}
+
 // Fetch user info for the header
 $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
 $stmt->execute([$user_id]);
@@ -24,10 +40,19 @@ if (!empty($user['profile_pic']) && $user['profile_pic'] !== 'default.png') {
     }
 }
 
-// Fetch actual health records for this student
-$recordsStmt = $pdo->prepare("SELECT hr.*, u.full_name as physician_name FROM health_records hr LEFT JOIN users u ON hr.physician_id = u.id WHERE hr.patient_id = ? ORDER BY visit_date DESC");
+// Fetch actual health records for this student (joining users table for both patient and physician info)
+$recordsStmt = $pdo->prepare("
+    SELECT hr.*, 
+           u.full_name as patient_name, u.course, u.section, u.dob, u.gender,
+           ph.full_name as physician_name 
+    FROM health_records hr 
+    JOIN users u ON hr.patient_id = u.id 
+    LEFT JOIN users ph ON hr.physician_id = ph.id 
+    WHERE hr.patient_id = ? 
+    ORDER BY hr.visit_date DESC, hr.id DESC
+");
 $recordsStmt->execute([$user_id]);
-$records = $recordsStmt->fetchAll();
+$records = $recordsStmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -51,6 +76,8 @@ $records = $recordsStmt->fetchAll();
     </style>
 </head>
 <body class="font-sans antialiased text-gray-800 bg-gray-50 flex h-screen overflow-hidden">
+
+    <?php include '../global_loader.php'; ?>
 
     <!-- Sidebar -->
     <aside class="hidden md:flex flex-col w-64 bg-gray-900 text-white h-full shadow-xl z-20 flex-shrink-0">
@@ -102,38 +129,55 @@ $records = $recordsStmt->fetchAll();
         </header>
 
         <div class="flex-1 overflow-y-auto p-4 sm:p-8 pb-24 md:pb-8">
-            <div class="max-w-6xl mx-auto space-y-6">
+            <div class="max-w-[100rem] mx-auto space-y-6">
                 
                 <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                     <div class="p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-                        <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2"><i data-lucide="folder-open" class="h-5 w-5 text-pup-maroon"></i> Medical History</h2>
+                        <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2"><i data-lucide="folder-open" class="h-5 w-5 text-pup-maroon"></i> My Medical & Treatment History</h2>
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
+                        <table class="w-full text-left border-collapse whitespace-nowrap">
                             <thead>
                                 <tr class="bg-white text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200">
                                     <th class="p-4 font-semibold">Date</th>
-                                    <th class="p-4 font-semibold">Service / Reason</th>
-                                    <th class="p-4 font-semibold">Physician</th>
-                                    <th class="p-4 font-semibold">Diagnosis / Notes</th>
-                                    <th class="p-4 font-semibold">Status</th>
+                                    <th class="p-4 font-semibold">Time In</th>
+                                    <th class="p-4 font-semibold">Time Out</th>
+                                    <th class="p-4 font-semibold">Student Name</th>
+                                    <th class="p-4 font-semibold">Course, Year & Section</th>
+                                    <th class="p-4 font-semibold">Age</th>
+                                    <th class="p-4 font-semibold">Gender</th>
+                                    <th class="p-4 font-semibold">Complaints / Reason</th>
+                                    <th class="p-4 font-semibold">Treatment / Medicines Given</th>
+                                    <th class="p-4 font-semibold text-center">Quantity</th>
+                                    <th class="p-4 font-semibold">Faculty / Physician</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100 text-sm">
                                 <?php if(count($records) > 0): ?>
-                                    <?php foreach($records as $hr): ?>
+                                    <?php foreach($records as $hr): 
+                                        $age = 'N/A';
+                                        if (!empty($hr['dob'])) {
+                                            $dob = new DateTime($hr['dob']);
+                                            $now = new DateTime();
+                                            $age = $now->diff($dob)->y;
+                                        }
+                                    ?>
                                         <tr class="hover:bg-gray-50 transition-colors">
-                                            <td class="p-4 text-gray-900 font-medium whitespace-nowrap"><?= date("M d, Y", strtotime($hr['visit_date'])) ?></td>
-                                            <td class="p-4 font-bold text-gray-900"><?= htmlspecialchars($hr['service_reason']) ?></td>
+                                            <td class="p-4 text-gray-900 font-medium"><?= date("M d, Y", strtotime($hr['visit_date'])) ?></td>
+                                            <td class="p-4 text-gray-600 font-semibold"><?= $hr['time_in'] ? date("h:i A", strtotime($hr['time_in'])) : '<span class="text-gray-400 italic font-normal">--:--</span>' ?></td>
+                                            <td class="p-4 text-gray-600 font-semibold"><?= $hr['time_out'] ? date("h:i A", strtotime($hr['time_out'])) : '<span class="text-gray-400 italic font-normal">--:--</span>' ?></td>
+                                            <td class="p-4 font-bold text-pup-maroon"><?= htmlspecialchars($hr['patient_name']) ?></td>
+                                            <td class="p-4 text-gray-600"><?= htmlspecialchars($hr['course'] . ' ' . $hr['section']) ?></td>
+                                            <td class="p-4 text-gray-600"><?= $age ?></td>
+                                            <td class="p-4 text-gray-600"><?= htmlspecialchars($hr['gender'] ?? 'N/A') ?></td>
+                                            <td class="p-4 text-gray-600 max-w-[150px] truncate" title="<?= htmlspecialchars($hr['complaints'] ?? $hr['service_reason']) ?>"><?= htmlspecialchars($hr['complaints'] ?? $hr['service_reason']) ?></td>
+                                            <td class="p-4 text-gray-600 max-w-[150px] truncate" title="<?= htmlspecialchars($hr['treatment'] ?? 'N/A') ?>"><?= htmlspecialchars($hr['treatment'] ?? 'N/A') ?></td>
+                                            <td class="p-4 text-gray-900 font-bold text-center"><?= htmlspecialchars($hr['quantity'] ?? '-') ?></td>
                                             <td class="p-4 text-gray-600"><?= htmlspecialchars($hr['physician_name'] ?? 'Clinic Staff') ?></td>
-                                            <td class="p-4 text-gray-500 max-w-xs truncate" title="<?= htmlspecialchars($hr['diagnosis']) ?>"><?= htmlspecialchars($hr['diagnosis']) ?></td>
-                                            <td class="p-4">
-                                                <span class="px-2.5 py-1 bg-green-50 text-green-700 rounded-full text-xs font-semibold border border-green-100"><?= htmlspecialchars($hr['status']) ?></span>
-                                            </td>
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php else: ?>
-                                    <tr><td colspan="5" class="p-8 text-center text-gray-500">No health records found in the system.</td></tr>
+                                    <tr><td colspan="11" class="p-8 text-center text-gray-500">You have no recorded clinic visits or treatments yet.</td></tr>
                                 <?php endif; ?>
                             </tbody>
                         </table>
@@ -172,17 +216,6 @@ $records = $recordsStmt->fetchAll();
         lucide.createIcons();
         function openLogoutModal() { document.getElementById('logoutModalOverlay').classList.replace('opacity-0', 'opacity-100'); document.getElementById('logoutModalPanel').classList.replace('opacity-0', 'opacity-100'); document.getElementById('logoutModalPanel').classList.replace('translate-y-4', 'translate-y-0'); document.getElementById('logoutModalPanel').classList.replace('sm:scale-95', 'sm:scale-100'); document.getElementById('logoutModal').classList.remove('hidden'); }
         function closeLogoutModal() { document.getElementById('logoutModalOverlay').classList.replace('opacity-100', 'opacity-0'); document.getElementById('logoutModalPanel').classList.replace('opacity-100', 'opacity-0'); document.getElementById('logoutModalPanel').classList.replace('translate-y-0', 'translate-y-4'); document.getElementById('logoutModalPanel').classList.replace('sm:scale-100', 'sm:scale-95'); setTimeout(() => document.getElementById('logoutModal').classList.add('hidden'), 300); }
-        
-        document.addEventListener('DOMContentLoaded', () => { 
-            document.querySelectorAll('a[href]:not([href^="#"]):not([target="_blank"]):not([onclick])').forEach(link => { 
-                link.addEventListener('click', e => { 
-                    const href = link.getAttribute('href'); 
-                    if (!href || href === "javascript:void(0);") return; 
-                    e.preventDefault(); document.body.classList.add('page-exit'); 
-                    setTimeout(() => window.location.href = href, 250); 
-                }); 
-            }); 
-        });
     </script>
 </body>
 </html>
