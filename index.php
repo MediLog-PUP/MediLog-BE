@@ -4,10 +4,10 @@ session_start();
 // If the user is already logged in, redirect them to their respective dashboard
 if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
     if ($_SESSION['role'] === 'admin' || $_SESSION['role'] === 'faculty') {
-        header("Location: admin_dashboard.php");
+        header("Location: admin/admin_dashboard.php");
         exit();
     } elseif ($_SESSION['role'] === 'student') {
-        header("Location: student_dashboard.php");
+        header("Location: student/student_dashboard.php");
         exit();
     }
 }

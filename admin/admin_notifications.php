@@ -16,14 +16,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mark_read'])) {
     exit();
 }
 
+// Fetch Admin Info for Header Profile Pic
 $stmt = $pdo->prepare("SELECT full_name, profile_pic FROM users WHERE id = ?");
 $stmt->execute([$user_id]);
 $user = $stmt->fetch();
-$profile_pic = !empty($user['profile_pic']) && $user['profile_pic'] !== 'default.png' ? '../uploads/profiles/' . htmlspecialchars($user['profile_pic']) : 'https://ui-avatars.com/api/?name=' . urlencode($user['full_name']) . '&background=880000&color=fff';
+
+$profile_pic = 'https://ui-avatars.com/api/?name=' . urlencode($user['full_name']) . '&background=880000&color=fff';
+if (!empty($user['profile_pic']) && $user['profile_pic'] !== 'default.png') {
+    if (strpos($user['profile_pic'], 'data:image') === 0) {
+        $profile_pic = $user['profile_pic'];
+    } else {
+        $profile_pic = '../uploads/profiles/' . htmlspecialchars($user['profile_pic']);
+    }
+}
 
 // Fetch Notifications intended for admins (user_id IS NULL or user_id matches admin)
 try {
-    $notifStmt = $pdo->prepare("SELECT * FROM notifications WHERE user_id IS NULL OR user_id = ? ORDER BY created_at DESC LIMIT 30");
+    $notifStmt = $pdo->prepare("SELECT * FROM notifications WHERE user_id IS NULL OR user_id = ? ORDER BY created_at DESC LIMIT 40");
     $notifStmt->execute([$user_id]);
     $notifications = $notifStmt->fetchAll(PDO::FETCH_ASSOC);
 } catch(PDOException $e) {
@@ -67,7 +76,6 @@ function time_elapsed_string($datetime, $full = false) {
 </head>
 <body class="font-sans antialiased text-gray-800 bg-gray-50 flex h-screen overflow-hidden">
 
-    <!-- Sidebar -->
     <aside class="hidden md:flex flex-col w-64 bg-gray-900 text-white h-full shadow-xl z-20 flex-shrink-0">
         <div class="p-6 flex items-center gap-3 border-b border-gray-800">
             <div class="bg-pup-gold text-gray-900 p-2 rounded-lg"><i data-lucide="shield-plus" class="h-6 w-6"></i></div>
@@ -87,7 +95,6 @@ function time_elapsed_string($datetime, $full = false) {
         </div>
     </aside>
 
-    <!-- Mobile Bottom Navigation -->
     <nav class="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 z-50 overflow-x-auto no-scrollbar shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
         <div class="flex items-center w-max px-2 min-w-full justify-between">
             <a href="admin_dashboard.php" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors"><i data-lucide="layout-dashboard" class="h-5 w-5"></i><span class="text-[10px] font-medium mt-1">Home</span></a>
@@ -104,7 +111,7 @@ function time_elapsed_string($datetime, $full = false) {
         <header class="bg-white border-b border-gray-200 px-4 md:px-8 py-4 flex items-center justify-between z-10 shadow-sm">
             <div class="flex items-center gap-3">
                 <a href="admin_dashboard.php" class="md:hidden text-gray-500 hover:text-pup-maroon"><i data-lucide="arrow-left" class="h-6 w-6"></i></a>
-                <h1 class="text-xl md:text-2xl font-bold text-gray-900">Admin Notifications</h1>
+                <h1 class="text-xl md:text-2xl font-bold text-gray-900">Admin Activity Logs</h1>
             </div>
             <div class="flex items-center gap-3 sm:gap-4">
                 <button onclick="openLogoutModal()" class="md:hidden text-gray-500 hover:text-red-600 transition-colors p-2 bg-gray-50 rounded-full border border-gray-200"><i data-lucide="log-out" class="h-5 w-5"></i></button>
@@ -119,7 +126,7 @@ function time_elapsed_string($datetime, $full = false) {
         <div class="flex-1 overflow-y-auto p-4 sm:p-8 pb-24 md:pb-8">
             <div class="max-w-4xl mx-auto space-y-4">
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-lg font-bold text-gray-900">Recent System Activity</h2>
+                    <h2 class="text-lg font-bold text-gray-900">System Activity & Alerts</h2>
                     <form method="POST">
                         <button type="submit" name="mark_read" class="text-sm font-semibold text-pup-maroon hover:underline flex items-center gap-1"><i data-lucide="check-check" class="h-4 w-4"></i> Mark all as read</button>
                     </form>
@@ -128,15 +135,38 @@ function time_elapsed_string($datetime, $full = false) {
                 <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                     <div class="divide-y divide-gray-100">
                         <?php if(count($notifications) > 0): ?>
-                            <?php foreach($notifications as $notif): ?>
-                                <div class="p-5 <?= $notif['is_read'] ? 'bg-white' : 'bg-red-50/50 hover:bg-red-50 border-l-4 border-l-pup-maroon' ?> transition-colors flex gap-4 relative group">
-                                    <div class="w-10 h-10 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center flex-shrink-0"><i data-lucide="bell-ring" class="h-5 w-5"></i></div>
+                            <?php foreach($notifications as $notif): 
+                                $message = htmlspecialchars($notif['message']);
+                                
+                                // Default values
+                                $icon = 'bell-ring';
+                                $iconColor = 'text-gray-600';
+                                $bgColor = 'bg-gray-100';
+                                $title = 'System Update';
+
+                                // Determine notification type based on prefixes set in backend
+                                if (strpos($message, '[Inventory]') !== false) {
+                                    $icon = 'pill'; $iconColor = 'text-blue-600'; $bgColor = 'bg-blue-50'; $title = 'Inventory Action';
+                                    $message = str_replace('[Inventory] ', '', $message);
+                                } elseif (strpos($message, '[Clearance]') !== false) {
+                                    $icon = 'file-check-2'; $iconColor = 'text-green-600'; $bgColor = 'bg-green-50'; $title = 'Clearance Action';
+                                    $message = str_replace('[Clearance] ', '', $message);
+                                } elseif (strpos($message, '[Appointment]') !== false) {
+                                    $icon = 'calendar'; $iconColor = 'text-yellow-600'; $bgColor = 'bg-yellow-50'; $title = 'Appointment Action';
+                                    $message = str_replace('[Appointment] ', '', $message);
+                                } elseif (strpos($message, '[Message]') !== false) {
+                                    $icon = 'message-square'; $iconColor = 'text-purple-600'; $bgColor = 'bg-purple-50'; $title = 'Communication Log';
+                                    $message = str_replace('[Message] ', '', $message);
+                                }
+                            ?>
+                                <div class="p-5 <?= $notif['is_read'] ? 'bg-white' : 'bg-red-50/30 hover:bg-red-50 border-l-4 border-l-pup-maroon' ?> transition-colors flex gap-4 relative group">
+                                    <div class="w-10 h-10 rounded-full <?= $bgColor ?> <?= $iconColor ?> flex items-center justify-center flex-shrink-0"><i data-lucide="<?= $icon ?>" class="h-5 w-5"></i></div>
                                     <div class="flex-1">
                                         <div class="flex justify-between items-start mb-1">
-                                            <h3 class="font-bold text-gray-900 text-sm">System Update</h3>
+                                            <h3 class="font-bold text-gray-900 text-sm"><?= $title ?></h3>
                                             <span class="text-xs font-semibold text-gray-500"><?= time_elapsed_string($notif['created_at']) ?></span>
                                         </div>
-                                        <p class="text-sm text-gray-700"><?= htmlspecialchars($notif['message']) ?></p>
+                                        <p class="text-sm text-gray-700"><?= $message ?></p>
                                     </div>
                                     <?php if(!$notif['is_read']): ?>
                                         <div class="absolute right-5 top-1/2 transform -translate-y-1/2 w-2.5 h-2.5 bg-pup-maroon rounded-full"></div>
@@ -144,7 +174,7 @@ function time_elapsed_string($datetime, $full = false) {
                                 </div>
                             <?php endforeach; ?>
                         <?php else: ?>
-                            <div class="p-8 text-center text-gray-500 text-sm">No new notifications for admins.</div>
+                            <div class="p-8 text-center text-gray-500 text-sm">No new activity logs.</div>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -173,9 +203,9 @@ function time_elapsed_string($datetime, $full = false) {
     </div>
     <script>
         lucide.createIcons();
-        function openLogoutModal() { const m = document.getElementById('logoutModal'); m.classList.remove('hidden'); setTimeout(() => { document.getElementById('logoutModalOverlay').classList.replace('opacity-0', 'opacity-100'); document.getElementById('logoutModalPanel').classList.replace('opacity-0', 'opacity-100'); document.getElementById('logoutModalPanel').classList.replace('translate-y-4', 'translate-y-0'); document.getElementById('logoutModalPanel').classList.replace('sm:scale-95', 'sm:scale-100'); }, 10); }
+        function openLogoutModal() { document.getElementById('logoutModalOverlay').classList.replace('opacity-0', 'opacity-100'); document.getElementById('logoutModalPanel').classList.replace('opacity-0', 'opacity-100'); document.getElementById('logoutModalPanel').classList.replace('translate-y-4', 'translate-y-0'); document.getElementById('logoutModalPanel').classList.replace('sm:scale-95', 'sm:scale-100'); document.getElementById('logoutModal').classList.remove('hidden'); }
         function closeLogoutModal() { document.getElementById('logoutModalOverlay').classList.replace('opacity-100', 'opacity-0'); document.getElementById('logoutModalPanel').classList.replace('opacity-100', 'opacity-0'); document.getElementById('logoutModalPanel').classList.replace('translate-y-0', 'translate-y-4'); document.getElementById('logoutModalPanel').classList.replace('sm:scale-100', 'sm:scale-95'); setTimeout(() => document.getElementById('logoutModal').classList.add('hidden'), 300); }
-        document.addEventListener('DOMContentLoaded', () => { document.querySelectorAll('a[href]').forEach(link => { link.addEventListener('click', e => { const href = link.getAttribute('href'); if (!href || href.startsWith('#') || link.getAttribute('target') === '_blank') return; e.preventDefault(); document.body.classList.add('page-exit'); setTimeout(() => window.location.href = href, 250); }); }); });
+        document.addEventListener('DOMContentLoaded', () => { document.querySelectorAll('a[href]:not([href^="#"]):not([target="_blank"])').forEach(link => { link.addEventListener('click', e => { const href = link.getAttribute('href'); if (!href || href === "javascript:void(0);") return; e.preventDefault(); document.body.classList.add('page-exit'); setTimeout(() => window.location.href = href, 250); }); }); });
     </script>
 </body>
 </html>

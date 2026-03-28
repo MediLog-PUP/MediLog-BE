@@ -11,51 +11,61 @@ $user_id = $_SESSION['user_id'];
 $success_msg = '';
 $error_msg = '';
 
+// Automatically upgrade column to hold Base64 data if needed
+try {
+    $pdo->exec("ALTER TABLE users MODIFY profile_pic LONGTEXT");
+} catch (PDOException $e) {}
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $full_name = trim($_POST['first_name'] . ' ' . $_POST['last_name']);
-    $phone_number = $_POST['phone_number'];
-    
-    // Handle Profile Picture Upload
-    if (isset($_FILES['profile_pic']) && $_FILES['profile_pic']['error'] == 0) {
-        $allowed_ext = ['jpg', 'jpeg', 'png', 'gif'];
-        $file_name = $_FILES['profile_pic']['name'];
-        $file_ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
-        $file_size = $_FILES['profile_pic']['size'];
+    // Handle Form Details Update
+    if(isset($_POST['first_name'])) {
+        $first_name = $_POST['first_name'] ?? '';
+        $last_name = $_POST['last_name'] ?? '';
+        $full_name = trim($first_name . ' ' . $last_name);
+        $phone_number = $_POST['phone_number'] ?? '';
         
-        if (in_array($file_ext, $allowed_ext) && $file_size < 5000000) { 
-            $new_filename = uniqid('profile_') . '.' . $file_ext;
-            $upload_path = '../uploads/profiles/' . $new_filename;
-            
-            // Note: Make sure 'uploads/profiles/' exists in your main MediLog2 folder
-            if (move_uploaded_file($_FILES['profile_pic']['tmp_name'], $upload_path)) {
-                $stmt = $pdo->prepare("UPDATE users SET profile_pic = ? WHERE id = ?");
-                $stmt->execute([$new_filename, $user_id]);
-            } else {
-                $error_msg = "Failed to upload image.";
-            }
-        } else {
-            $error_msg = "Invalid file type or file too large (Max 5MB).";
+        $updateStmt = $pdo->prepare("UPDATE users SET full_name=?, phone_number=? WHERE id=?");
+        if($updateStmt->execute([$full_name, $phone_number, $user_id])) {
+            $success_msg = "Profile updated successfully!";
         }
     }
 
-    if(empty($error_msg)){
-        $stmt = $pdo->prepare("UPDATE users SET full_name = ?, phone_number = ? WHERE id = ?");
-        $stmt->execute([$full_name, $phone_number, $user_id]);
-        $_SESSION['full_name'] = $full_name;
-        $success_msg = "Profile updated successfully!";
+    // Handle Profile Picture Upload explicitly directly to Database (Base64)
+    if (isset($_FILES['profile_pic']) && $_FILES['profile_pic']['error'] == 0) {
+        $file_tmp = $_FILES['profile_pic']['tmp_name'];
+        $file_type = mime_content_type($file_tmp);
+        $file_size = $_FILES['profile_pic']['size'];
+        
+        if (strpos($file_type, 'image/') === 0 && $file_size < 5000000) { 
+            $img_data = file_get_contents($file_tmp);
+            $base64 = 'data:' . $file_type . ';base64,' . base64_encode($img_data);
+            
+            $updatePicStmt = $pdo->prepare("UPDATE users SET profile_pic=? WHERE id=?");
+            $updatePicStmt->execute([$base64, $user_id]);
+            $success_msg = "Profile picture saved directly to database!";
+        } else {
+            $error_msg = "Invalid file type or size too large (max 5MB).";
+        }
     }
 }
 
-// Fetch current user data
+// Fetch Admin Profile Data
 $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
 $stmt->execute([$user_id]);
 $user = $stmt->fetch();
 
 $name_parts = explode(' ', $user['full_name'], 2);
-$first_name = $name_parts[0];
-$last_name = isset($name_parts[1]) ? $name_parts[1] : '';
+$first_name = $name_parts[0] ?? '';
+$last_name = $name_parts[1] ?? '';
 
-$profile_pic = !empty($user['profile_pic']) && $user['profile_pic'] !== 'default.png' ? '../uploads/profiles/' . htmlspecialchars($user['profile_pic']) : 'https://ui-avatars.com/api/?name=' . urlencode($user['full_name']) . '&background=880000&color=fff';
+$profile_pic = 'https://ui-avatars.com/api/?name=' . urlencode($user['full_name']) . '&background=880000&color=fff';
+if (!empty($user['profile_pic']) && $user['profile_pic'] !== 'default.png') {
+    if (strpos($user['profile_pic'], 'data:image') === 0) {
+        $profile_pic = $user['profile_pic'];
+    } else {
+        $profile_pic = '../uploads/profiles/' . htmlspecialchars($user['profile_pic']);
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -64,32 +74,41 @@ $profile_pic = !empty($user['profile_pic']) && $user['profile_pic'] !== 'default
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Profile - MediLog</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script>tailwind.config = { theme: { extend: { colors: { pup: { maroon: '#880000', gold: '#F1B500' } } } } }</script>
-    <style>.no-scrollbar::-webkit-scrollbar { display: none; } .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }</style>
+    <script>
+        tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { pup: { maroon: '#880000', maroonDark: '#660000', gold: '#F1B500', goldLight: '#FDE68A' } } } } }
+    </script>
+    <style>
+        body { opacity: 0; animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .page-exit { animation: fadeOut 0.3s ease-in forwards !important; }
+        @keyframes fadeOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-10px); } }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
 </head>
-<body class="bg-gray-50 flex h-screen overflow-hidden text-gray-800">
+<body class="font-sans antialiased text-gray-800 bg-gray-50 flex h-screen overflow-hidden">
 
-    <aside class="hidden md:flex flex-col w-64 bg-gray-900 text-white h-full shadow-xl flex-shrink-0 z-20">
+    <aside class="hidden md:flex flex-col w-64 bg-gray-900 text-white h-full shadow-xl z-20 flex-shrink-0">
         <div class="p-6 flex items-center gap-3 border-b border-gray-800">
             <div class="bg-pup-gold text-gray-900 p-2 rounded-lg"><i data-lucide="shield-plus" class="h-6 w-6"></i></div>
             <span class="font-bold text-xl tracking-tight text-white">MediLog Admin</span>
         </div>
         <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-            <a href="admin_dashboard.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 rounded-xl"><i data-lucide="layout-dashboard" class="h-5 w-5"></i> Overview</a>
-            <a href="medicine_inventory.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 rounded-xl"><i data-lucide="pill" class="h-5 w-5"></i> Inventory</a>
-            <a href="patient_records.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 rounded-xl"><i data-lucide="users" class="h-5 w-5"></i> Patient Records</a>
-            <a href="admin_appointments.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 rounded-xl"><i data-lucide="calendar" class="h-5 w-5"></i> Appointments</a>
-            <a href="admin_clearance.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 rounded-xl"><i data-lucide="file-check-2" class="h-5 w-5"></i> Clearances</a>
-            <a href="admin_inquiries.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 rounded-xl"><i data-lucide="message-square" class="h-5 w-5"></i> Inquiries</a>
-            <a href="admin_profile.php" class="flex items-center gap-3 px-4 py-3 bg-pup-maroon text-white rounded-xl shadow-sm"><i data-lucide="user-cog" class="h-5 w-5"></i> Profile</a>
+            <a href="admin_dashboard.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="layout-dashboard" class="h-5 w-5"></i> Overview</a>
+            <a href="medicine_inventory.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="pill" class="h-5 w-5"></i> Inventory</a>
+            <a href="patient_records.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="users" class="h-5 w-5"></i> Patient Records</a>
+            <a href="admin_appointments.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="calendar" class="h-5 w-5"></i> Appointments</a>
+            <a href="admin_clearance.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="file-check-2" class="h-5 w-5"></i> Clearances</a>
+            <a href="admin_inquiries.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="message-square" class="h-5 w-5"></i> Inquiries</a>
+            <a href="admin_profile.php" class="flex items-center gap-3 px-4 py-3 bg-pup-maroon text-white rounded-xl font-medium transition-colors shadow-sm"><i data-lucide="user-cog" class="h-5 w-5"></i> Profile</a>
         </nav>
         <div class="p-4 border-t border-gray-800">
-            <button onclick="openLogoutModal()" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-red-900/50 hover:text-red-400 rounded-xl w-full text-left"><i data-lucide="log-out" class="h-5 w-5"></i> Sign Out</button>
+            <button onclick="openLogoutModal()" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-red-900/50 hover:text-red-400 rounded-xl font-medium transition-colors w-full text-left"><i data-lucide="log-out" class="h-5 w-5"></i> Sign Out</button>
         </div>
     </aside>
 
-    <!-- Mobile Bottom Nav -->
     <nav class="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 z-50 overflow-x-auto no-scrollbar shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
         <div class="flex items-center w-max px-2 min-w-full justify-between">
             <a href="admin_dashboard.php" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors"><i data-lucide="layout-dashboard" class="h-5 w-5"></i><span class="text-[10px] font-medium mt-1">Home</span></a>
@@ -103,10 +122,10 @@ $profile_pic = !empty($user['profile_pic']) && $user['profile_pic'] !== 'default
     </nav>
 
     <main class="flex-1 flex flex-col h-full overflow-hidden">
-        <header class="bg-white border-b border-gray-200 px-4 sm:px-8 py-4 flex items-center justify-between shadow-sm z-10">
+        <header class="bg-white border-b border-gray-200 px-4 sm:px-8 py-4 flex items-center justify-between z-10 shadow-sm">
             <div class="flex items-center gap-3">
                 <div class="md:hidden bg-pup-maroon text-white p-1.5 rounded-lg mr-2"><i data-lucide="shield-plus" class="h-5 w-5 text-pup-gold"></i></div>
-                <h1 class="text-xl font-bold text-gray-900">Admin Profile</h1>
+                <h1 class="text-xl md:text-2xl font-bold text-gray-900">Admin Profile</h1>
             </div>
             <div class="flex items-center gap-3 sm:gap-4">
                 <a href="admin_notifications.php" class="text-gray-500 hover:text-pup-maroon p-2 bg-gray-50 hover:bg-red-50 rounded-full border border-gray-200 relative"><i data-lucide="bell" class="h-5 w-5"></i></a>
@@ -114,6 +133,7 @@ $profile_pic = !empty($user['profile_pic']) && $user['profile_pic'] !== 'default
                 <div class="hidden md:flex items-center gap-3 pl-4 border-l border-gray-200">
                     <span class="text-sm font-semibold text-gray-700 bg-gray-100 px-3 py-1 rounded-full mr-2"><i data-lucide="shield-check" class="h-4 w-4 inline mr-1 text-green-600"></i> Admin Session</span>
                     <div class="text-right"><p class="text-sm font-semibold text-gray-900"><?= htmlspecialchars($user['full_name']) ?></p></div>
+                    <img src="<?= $profile_pic ?>" alt="Profile" class="h-10 w-10 rounded-full border-2 border-gray-200 object-cover">
                 </div>
             </div>
         </header>
@@ -122,51 +142,77 @@ $profile_pic = !empty($user['profile_pic']) && $user['profile_pic'] !== 'default
             <div class="max-w-4xl mx-auto space-y-6">
                 
                 <?php if($success_msg): ?>
-                    <div class="bg-green-50 text-green-700 p-4 rounded-xl text-sm font-medium border border-green-200 flex items-center gap-2"><i data-lucide="check-circle-2" class="h-5 w-5"></i> <?= $success_msg ?></div>
+                    <div class="bg-green-50 text-green-700 p-4 rounded-xl text-sm font-medium border border-green-200 flex items-center gap-2"><i data-lucide="check-circle-2" class="h-5 w-5"></i> <?= htmlspecialchars($success_msg) ?></div>
                 <?php endif; ?>
                 <?php if($error_msg): ?>
-                    <div class="bg-red-50 text-red-700 p-4 rounded-xl text-sm font-medium border border-red-200 flex items-center gap-2"><i data-lucide="alert-circle" class="h-5 w-5"></i> <?= $error_msg ?></div>
+                    <div class="bg-red-50 text-red-700 p-4 rounded-xl text-sm font-medium border border-red-200 flex items-center gap-2"><i data-lucide="alert-circle" class="h-5 w-5"></i> <?= htmlspecialchars($error_msg) ?></div>
                 <?php endif; ?>
 
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
-                    <form action="admin_profile.php" method="POST" enctype="multipart/form-data" class="space-y-8">
-                        
-                        <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6 pb-6 border-b border-gray-100">
-                            <img src="<?= $profile_pic ?>" class="w-32 h-32 rounded-full border-4 border-gray-100 object-cover shadow-sm" id="preview-pic">
-                            <div class="text-center sm:text-left">
-                                <h3 class="text-lg font-bold text-gray-900 mb-2">Update Profile Picture</h3>
-                                <p class="text-xs text-gray-500 mb-3">Max file size: 5MB. Formats: JPG, PNG.</p>
-                                <input type="file" name="profile_pic" accept="image/*" class="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-pup-maroon hover:file:bg-red-100 cursor-pointer">
-                            </div>
+                <form action="admin_profile.php" method="POST" enctype="multipart/form-data" class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8">
+                    
+                    <div class="flex flex-col sm:flex-row items-center gap-6 mb-8 pb-6 border-b border-gray-100">
+                        <div class="relative">
+                            <img src="<?= $profile_pic ?>" alt="Profile Picture" class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md">
+                            <label for="profile_pic_upload" class="absolute bottom-0 right-0 bg-pup-maroon hover:bg-pup-maroonDark text-white p-2 rounded-full cursor-pointer shadow-sm transition-colors border-2 border-white">
+                                <i data-lucide="camera" class="h-4 w-4"></i>
+                            </label>
+                            <input type="file" id="profile_pic_upload" name="profile_pic" class="hidden" accept="image/jpeg, image/png, image/gif" onchange="this.form.submit()">
                         </div>
+                        <div class="text-center sm:text-left">
+                            <h3 class="text-lg font-bold text-gray-900">Admin Photo</h3>
+                            <p class="text-sm text-gray-500 mt-1">JPG, GIF or PNG. Max size of 5MB.</p>
+                            <p class="text-xs text-gray-400 mt-1 italic">Select a new image to auto-save.</p>
+                        </div>
+                    </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <div><label class="block text-sm font-medium mb-1">First Name</label><input type="text" name="first_name" value="<?= htmlspecialchars($first_name) ?>" class="w-full px-4 py-3 border border-gray-300 focus:border-pup-maroon rounded-xl" required></div>
-                            <div><label class="block text-sm font-medium mb-1">Last Name</label><input type="text" name="last_name" value="<?= htmlspecialchars($last_name) ?>" class="w-full px-4 py-3 border border-gray-300 focus:border-pup-maroon rounded-xl" required></div>
-                            <div><label class="block text-sm font-medium mb-1">Employee ID</label><input type="text" value="<?= htmlspecialchars($user['id_number']) ?>" class="w-full px-4 py-3 border rounded-xl bg-gray-50 text-gray-500 cursor-not-allowed" readonly></div>
-                            <div><label class="block text-sm font-medium mb-1">Email</label><input type="email" value="<?= htmlspecialchars($user['email']) ?>" class="w-full px-4 py-3 border rounded-xl bg-gray-50 text-gray-500 cursor-not-allowed" readonly></div>
-                            <div><label class="block text-sm font-medium mb-1">Phone Number</label><input type="tel" name="phone_number" value="<?= htmlspecialchars($user['phone_number'] ?? '') ?>" class="w-full px-4 py-3 border border-gray-300 focus:border-pup-maroon rounded-xl" placeholder="e.g. 09123456789"></div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">Account Information</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Employee ID</label>
+                            <input type="text" value="<?= htmlspecialchars($user['id_number']) ?>" class="block w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-500 sm:text-sm cursor-not-allowed" readonly>
                         </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                            <input type="email" value="<?= htmlspecialchars($user['email']) ?>" class="block w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-500 sm:text-sm cursor-not-allowed" readonly>
+                        </div>
+                    </div>
 
-                        <div class="flex justify-end pt-6 border-t border-gray-100">
-                            <button type="submit" class="px-6 py-3 w-full sm:w-auto bg-pup-maroon text-white rounded-xl font-semibold shadow-sm hover:bg-pup-maroonDark transition-colors flex items-center justify-center"><i data-lucide="save" class="h-4 w-4 mr-2"></i> Save Changes</button>
+                    <h3 class="text-lg font-bold text-gray-900 mb-4 pt-4 border-t border-gray-100">Personal Information</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                            <input type="text" name="first_name" value="<?= htmlspecialchars($first_name) ?>" required class="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm">
                         </div>
-                    </form>
-                </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                            <input type="text" name="last_name" value="<?= htmlspecialchars($last_name) ?>" required class="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                            <input type="text" name="phone_number" value="<?= htmlspecialchars($user['phone_number'] ?? '') ?>" class="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm">
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end pt-4 border-t border-gray-100">
+                        <button type="submit" class="bg-pup-maroon hover:bg-pup-maroonDark text-white px-8 py-3 rounded-xl font-semibold flex items-center transition-colors shadow-sm w-full sm:w-auto justify-center">
+                            Save Changes <i data-lucide="save" class="ml-2 h-5 w-5"></i>
+                        </button>
+                    </div>
+                </form>
+
             </div>
         </div>
     </main>
 
-    <!-- Logout Modal -->
     <div id="logoutModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div id="logoutModalOverlay" class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity opacity-0 duration-300" aria-hidden="true" onclick="closeLogoutModal()"></div>
+            <div id="logoutModalOverlay" class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity opacity-0 duration-300" onclick="closeLogoutModal()"></div>
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
             <div id="logoutModalPanel" class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-sm w-full opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95 duration-300">
                 <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <div class="sm:flex sm:items-start">
                         <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10"><i data-lucide="log-out" class="h-6 w-6 text-red-600"></i></div>
-                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left"><h3 class="text-lg leading-6 font-bold text-gray-900" id="modal-title">Sign Out</h3><div class="mt-2"><p class="text-sm text-gray-500">Are you sure you want to sign out?</p></div></div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left"><h3 class="text-lg leading-6 font-bold text-gray-900">Sign Out</h3><div class="mt-2"><p class="text-sm text-gray-500">Are you sure you want to sign out?</p></div></div>
                     </div>
                 </div>
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 flex flex-col sm:flex-row-reverse gap-2">
@@ -180,6 +226,7 @@ $profile_pic = !empty($user['profile_pic']) && $user['profile_pic'] !== 'default
         lucide.createIcons();
         function openLogoutModal() { const m = document.getElementById('logoutModal'); m.classList.remove('hidden'); setTimeout(() => { document.getElementById('logoutModalOverlay').classList.replace('opacity-0', 'opacity-100'); document.getElementById('logoutModalPanel').classList.replace('opacity-0', 'opacity-100'); document.getElementById('logoutModalPanel').classList.replace('translate-y-4', 'translate-y-0'); document.getElementById('logoutModalPanel').classList.replace('sm:scale-95', 'sm:scale-100'); }, 10); }
         function closeLogoutModal() { document.getElementById('logoutModalOverlay').classList.replace('opacity-100', 'opacity-0'); document.getElementById('logoutModalPanel').classList.replace('opacity-100', 'opacity-0'); document.getElementById('logoutModalPanel').classList.replace('translate-y-0', 'translate-y-4'); document.getElementById('logoutModalPanel').classList.replace('sm:scale-100', 'sm:scale-95'); setTimeout(() => document.getElementById('logoutModal').classList.add('hidden'), 300); }
+        document.addEventListener('DOMContentLoaded', () => { document.querySelectorAll('a[href]:not([href^="#"]):not([target="_blank"])').forEach(link => { link.addEventListener('click', e => { const href = link.getAttribute('href'); if (!href || href === "javascript:void(0);") return; e.preventDefault(); document.body.classList.add('page-exit'); setTimeout(() => window.location.href = href, 250); }); }); });
     </script>
 </body>
 </html>

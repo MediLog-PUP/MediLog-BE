@@ -23,15 +23,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['clearance_id']) && iss
     $updateStmt = $pdo->prepare("UPDATE medical_clearances SET status = ?, reviewed_by = ?, approved_date = NOW() WHERE id = ?");
     $updateStmt->execute([$new_status, $user_id, $c_id]);
     
-    // Notify the student
-    $stuStmt = $pdo->prepare("SELECT student_id, purpose FROM medical_clearances WHERE id = ?");
+    // Fetch student info
+    $stuStmt = $pdo->prepare("SELECT u.full_name, mc.student_id, mc.purpose FROM medical_clearances mc JOIN users u ON mc.student_id = u.id WHERE mc.id = ?");
     $stuStmt->execute([$c_id]);
     $clearance = $stuStmt->fetch();
     
     if ($clearance) {
-        $notif_msg = "Your Medical Clearance request for " . $clearance['purpose'] . " has been " . $new_status . ".";
+        // Notify the student
+        $notif_msg = "[Clearance] Faculty " . $user['full_name'] . " has " . strtolower($new_status) . " your Medical Clearance request for " . $clearance['purpose'] . ".";
         $notifStmt = $pdo->prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)");
         $notifStmt->execute([$clearance['student_id'], $notif_msg]);
+
+        // Notify Admins
+        $admin_notif_msg = "[Clearance] Faculty " . $user['full_name'] . " " . strtolower($new_status) . " a clearance request for " . $clearance['full_name'] . ".";
+        $pdo->prepare("INSERT INTO notifications (user_id, message) VALUES (NULL, ?)")->execute([$admin_notif_msg]);
     }
     
     $success_msg = "Clearance request has been " . $new_status . ".";

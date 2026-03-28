@@ -10,28 +10,68 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'facu
 $user_id = $_SESSION['user_id'];
 $success_msg = '';
 
-// Handle Adding Medicine
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['name'], $_POST['category'])) {
-    $name = $_POST['name'];
-    $category = $_POST['category'];
-    $dosage = $_POST['dosage'];
-    $quantity = intval($_POST['quantity']);
-    $expiration_date = $_POST['expiration_date'];
-    
-    $status = ($quantity > 20) ? 'In Stock' : (($quantity > 0) ? 'Low Stock' : 'Out of Stock');
-
-    $stmt = $pdo->prepare("INSERT INTO medicine_inventory (name, category, dosage, quantity, status, expiration_date) VALUES (?, ?, ?, ?, ?, ?)");
-    $stmt->execute([$name, $category, $dosage, $quantity, $status, $expiration_date]);
-    
-    $success_msg = "Medicine item added successfully!";
-}
-
+// Fetch Admin Profile
 $stmt = $pdo->prepare("SELECT full_name, profile_pic FROM users WHERE id = ?");
 $stmt->execute([$user_id]);
 $user = $stmt->fetch();
-$profile_pic = !empty($user['profile_pic']) && $user['profile_pic'] !== 'default.png' ? '../uploads/profiles/' . htmlspecialchars($user['profile_pic']) : 'https://ui-avatars.com/api/?name=' . urlencode($user['full_name']) . '&background=880000&color=fff';
 
-// Fetch Inventory Data
+$profile_pic = 'https://ui-avatars.com/api/?name=' . urlencode($user['full_name']) . '&background=880000&color=fff';
+if (!empty($user['profile_pic']) && $user['profile_pic'] !== 'default.png') {
+    if (strpos($user['profile_pic'], 'data:image') === 0) {
+        $profile_pic = $user['profile_pic'];
+    } else {
+        $profile_pic = '../uploads/profiles/' . htmlspecialchars($user['profile_pic']);
+    }
+}
+
+// Handle Adding Medicine & Reducing/Increasing
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if (isset($_POST['action']) && isset($_POST['medicine_id'])) {
+        $med_id = intval($_POST['medicine_id']);
+        $action = $_POST['action'];
+
+        if ($action === 'increase' || $action === 'reduce') {
+            $adj = ($action === 'increase') ? 1 : -1;
+            
+            $stmt = $pdo->prepare("SELECT name, quantity FROM medicine_inventory WHERE id = ?");
+            $stmt->execute([$med_id]);
+            $med = $stmt->fetch();
+
+            if ($med) {
+                $new_qty = max(0, $med['quantity'] + $adj);
+                $new_status = ($new_qty > 20) ? 'In Stock' : (($new_qty > 0) ? 'Low Stock' : 'Out of Stock');
+
+                $updateStmt = $pdo->prepare("UPDATE medicine_inventory SET quantity = ?, status = ? WHERE id = ?");
+                $updateStmt->execute([$new_qty, $new_status, $med_id]);
+                
+                // Add Admin Activity Log Notification
+                $adj_text = ($action === 'increase') ? 'increased' : 'reduced';
+                $notif_msg = "[Inventory] Faculty " . $user['full_name'] . " " . $adj_text . " the stock of " . $med['name'] . ".";
+                $pdo->prepare("INSERT INTO notifications (user_id, message) VALUES (NULL, ?)")->execute([$notif_msg]);
+
+                $success_msg = "Inventory quantity updated.";
+            }
+        }
+    } elseif (isset($_POST['name'], $_POST['category'])) {
+        $name = $_POST['name'];
+        $category = $_POST['category'];
+        $dosage = $_POST['dosage'];
+        $quantity = intval($_POST['quantity']);
+        $expiration_date = $_POST['expiration_date'];
+        
+        $status = ($quantity > 20) ? 'In Stock' : (($quantity > 0) ? 'Low Stock' : 'Out of Stock');
+
+        $stmt = $pdo->prepare("INSERT INTO medicine_inventory (name, category, dosage, quantity, status, expiration_date) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$name, $category, $dosage, $quantity, $status, $expiration_date]);
+        
+        // Add Admin Activity Log Notification
+        $notif_msg = "[Inventory] Faculty " . $user['full_name'] . " added a new medicine: " . $name . ".";
+        $pdo->prepare("INSERT INTO notifications (user_id, message) VALUES (NULL, ?)")->execute([$notif_msg]);
+
+        $success_msg = "Medicine item added successfully!";
+    }
+}
+
 try {
     $invStmt = $pdo->query("SELECT * FROM medicine_inventory ORDER BY name ASC");
     $inventory = $invStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -62,7 +102,6 @@ try {
 </head>
 <body class="font-sans antialiased text-gray-800 bg-gray-50 flex h-screen overflow-hidden">
 
-    <!-- Sidebar -->
     <aside class="hidden md:flex flex-col w-64 bg-gray-900 text-white h-full shadow-xl z-20 flex-shrink-0">
         <div class="p-6 flex items-center gap-3 border-b border-gray-800">
             <div class="bg-pup-gold text-gray-900 p-2 rounded-lg"><i data-lucide="shield-plus" class="h-6 w-6"></i></div>
@@ -82,7 +121,6 @@ try {
         </div>
     </aside>
 
-    <!-- Mobile Bottom Navigation -->
     <nav class="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 z-50 overflow-x-auto no-scrollbar shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
         <div class="flex items-center w-max px-2 min-w-full justify-between">
             <a href="admin_dashboard.php" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors"><i data-lucide="layout-dashboard" class="h-5 w-5"></i><span class="text-[10px] font-medium mt-1">Home</span></a>
@@ -95,7 +133,6 @@ try {
         </div>
     </nav>
 
-    <!-- Main Content -->
     <main class="flex-1 flex flex-col h-full overflow-hidden">
         <header class="bg-white border-b border-gray-200 px-4 sm:px-8 py-4 flex items-center justify-between z-10 shadow-sm">
             <div class="flex items-center gap-3">
@@ -152,7 +189,20 @@ try {
                                                 <div class="text-gray-900"><?= htmlspecialchars($item['category']) ?></div>
                                                 <div class="text-xs text-gray-500"><?= htmlspecialchars($item['dosage']) ?></div>
                                             </td>
-                                            <td class="p-4 font-medium"><?= htmlspecialchars($item['quantity']) ?> pcs</td>
+                                            <td class="p-4 font-medium">
+                                                <div class="flex items-center gap-3">
+                                                    <!-- Quantity Buttons -->
+                                                    <form method="POST" action="medicine_inventory.php" class="m-0 p-0">
+                                                        <input type="hidden" name="medicine_id" value="<?= $item['id'] ?>">
+                                                        <button type="submit" name="action" value="reduce" class="w-7 h-7 flex items-center justify-center bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors border border-red-100"><i data-lucide="minus" class="h-3 w-3"></i></button>
+                                                    </form>
+                                                    <span class="font-bold text-gray-900 w-8 text-center"><?= htmlspecialchars($item['quantity']) ?></span>
+                                                    <form method="POST" action="medicine_inventory.php" class="m-0 p-0">
+                                                        <input type="hidden" name="medicine_id" value="<?= $item['id'] ?>">
+                                                        <button type="submit" name="action" value="increase" class="w-7 h-7 flex items-center justify-center bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors border border-green-100"><i data-lucide="plus" class="h-3 w-3"></i></button>
+                                                    </form>
+                                                </div>
+                                            </td>
                                             <td class="p-4">
                                                 <?php if($item['status'] == 'In Stock' && $item['quantity'] > 20): ?>
                                                     <span class="px-2.5 py-1 bg-green-50 text-green-700 rounded-full text-xs font-semibold border border-green-100">In Stock</span>
@@ -285,10 +335,10 @@ try {
             setTimeout(() => document.getElementById('addMedicineModal').classList.add('hidden'), 300);
         }
         document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('a[href]').forEach(link => {
+            document.querySelectorAll('a[href]:not([href^="#"]):not([target="_blank"])').forEach(link => {
                 link.addEventListener('click', e => {
                     const href = link.getAttribute('href');
-                    if (!href || href.startsWith('#') || link.getAttribute('target') === '_blank') return;
+                    if (!href || href === "javascript:void(0);") return;
                     e.preventDefault();
                     document.body.classList.add('page-exit');
                     setTimeout(() => window.location.href = href, 250);
