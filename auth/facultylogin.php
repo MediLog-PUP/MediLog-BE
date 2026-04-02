@@ -13,7 +13,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $id_number = trim($_POST['id_number']);
     $password = $_POST['password'];
 
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE id_number = ? AND role IN ('admin', 'faculty')");
+    // Updated to allow super_admin to log in!
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE id_number = ? AND role IN ('admin', 'faculty', 'super_admin')");
     $stmt->execute([$id_number]);
     $user = $stmt->fetch();
 

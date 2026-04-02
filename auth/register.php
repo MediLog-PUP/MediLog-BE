@@ -27,8 +27,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $error = "Student ID already exists in the system.";
         } else {
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-            $insert = $pdo->prepare("INSERT INTO users (full_name, id_number, email, password, role) VALUES (?, ?, ?, ?, 'student')");
-            if ($insert->execute([$full_name, $id_number, $email, $hashed_password])) {
+            
+            // STRICT ENFORCEMENT: Force the role to be 'student' only.
+            // No faculty or admin accounts can ever be created through this page.
+            $role = 'student';
+            
+            $insert = $pdo->prepare("INSERT INTO users (full_name, id_number, email, password, role) VALUES (?, ?, ?, ?, ?)");
+            if ($insert->execute([$full_name, $id_number, $email, $hashed_password, $role])) {
                 $success = "Registration successful! You may now log in.";
             } else {
                 $error = "An error occurred during registration. Please try again.";
@@ -42,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - MediLog</title>
+    <title>Student Registration - MediLog</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -59,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     <div class="w-full max-w-lg p-8 sm:p-10 bg-white rounded-3xl shadow-xl border border-gray-100 z-10 mx-4">
         
-        <h2 class="text-2xl font-extrabold text-gray-900 mb-2">Create an Account</h2>
+        <h2 class="text-2xl font-extrabold text-gray-900 mb-2">Create Student Account</h2>
         <p class="text-gray-500 text-sm mb-8">Register your student ID to access the MediLog clinic portal.</p>
 
         <?php if($error): ?>
