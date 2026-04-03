@@ -191,42 +191,63 @@
         </div>
     </main>
 
-    <!-- Minimal & Responsive Footer -->
-    <footer class="w-full bg-white/60 backdrop-blur-lg border-t border-gray-200/60 mt-auto relative z-20 slide-up delay-400">
-        <div class="max-w-7xl mx-auto px-6 md:px-12 py-8">
-            <div class="flex flex-col md:flex-row justify-between items-center gap-6 md:gap-4">
-                
-                <!-- Brand & Copyright -->
-                <div class="flex flex-col items-center md:items-start gap-2 w-full md:w-1/3">
-                    <div class="flex items-center gap-2 text-gray-900 font-extrabold text-xl">
-                        <i data-lucide="clipboard-heart" class="h-5 w-5 text-pup-maroon"></i> MediLog
+    <!-- Centered & Enhanced Footer -->
+    <footer class="w-full bg-white/40 backdrop-blur-xl border-t border-white/60 mt-auto relative z-20 slide-up delay-400 overflow-hidden">
+        
+        <!-- Decorative Top Glow -->
+        <div class="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-pup-maroon/40 to-transparent"></div>
+
+        <div class="max-w-4xl mx-auto px-6 py-12 flex flex-col items-center justify-center text-center gap-10">
+            
+            <!-- Brand Section -->
+            <div class="flex flex-col items-center gap-4">
+                <div class="flex items-center gap-2 text-gray-900 font-extrabold text-2xl tracking-tight group cursor-default">
+                    <div class="bg-white/80 p-2.5 rounded-xl shadow-sm border border-white group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                        <i data-lucide="clipboard-heart" class="h-6 w-6 text-pup-maroon"></i>
                     </div>
-                    <p class="text-xs text-gray-500 font-medium text-center md:text-left">
-                        &copy; <?php echo date("Y"); ?> Polytechnic University of the Philippines.<br class="hidden md:block"> All rights reserved.
-                    </p>
+                    MediLog
                 </div>
-
-                <!-- Simple Links -->
-                <div class="flex flex-wrap justify-center gap-4 sm:gap-6 text-sm font-semibold text-gray-600 w-full md:w-1/3">
-                    <a href="#" class="hover:text-pup-maroon transition-colors">Privacy Policy</a>
-                    <a href="#" class="hover:text-pup-maroon transition-colors">Terms of Service</a>
-                    <a href="#" class="hover:text-pup-maroon transition-colors">Help Center</a>
-                </div>
-
-                <!-- Socials -->
-                <div class="flex justify-center md:justify-end gap-4 w-full md:w-1/3">
-                    <a href="#" class="w-10 h-10 rounded-full bg-gray-100 hover:bg-pup-maroon hover:text-white flex items-center justify-center text-gray-500 transition-colors shadow-sm">
-                        <span class="sr-only">Facebook</span><i data-lucide="facebook" class="h-4 w-4"></i>
-                    </a>
-                    <a href="#" class="w-10 h-10 rounded-full bg-gray-100 hover:bg-pup-maroon hover:text-white flex items-center justify-center text-gray-500 transition-colors shadow-sm">
-                        <span class="sr-only">Twitter</span><i data-lucide="twitter" class="h-4 w-4"></i>
-                    </a>
-                    <a href="#" class="w-10 h-10 rounded-full bg-gray-100 hover:bg-pup-maroon hover:text-white flex items-center justify-center text-gray-500 transition-colors shadow-sm">
-                        <span class="sr-only">Website</span><i data-lucide="globe" class="h-4 w-4"></i>
-                    </a>
-                </div>
-                
+                <p class="text-sm text-gray-500 font-medium max-w-md leading-relaxed">
+                    Streamlining campus healthcare for the Polytechnic University of the Philippines. Your health is our top priority.
+                </p>
             </div>
+
+            <!-- Animated Links -->
+            <div class="flex flex-wrap justify-center gap-6 sm:gap-10 text-sm font-bold text-gray-600">
+                <a href="#" class="hover:text-pup-maroon transition-colors relative group py-1">
+                    Privacy Policy
+                    <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-pup-maroon transition-all duration-300 ease-out group-hover:w-full"></span>
+                </a>
+                <a href="#" class="hover:text-pup-maroon transition-colors relative group py-1">
+                    Terms of Service
+                    <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-pup-maroon transition-all duration-300 ease-out group-hover:w-full"></span>
+                </a>
+                <a href="#" class="hover:text-pup-maroon transition-colors relative group py-1">
+                    Help Center
+                    <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-pup-maroon transition-all duration-300 ease-out group-hover:w-full"></span>
+                </a>
+            </div>
+
+            <!-- Elevated Social Icons -->
+            <div class="flex justify-center gap-5">
+                <a href="#" class="w-12 h-12 rounded-full bg-white/80 border border-gray-100 hover:bg-pup-maroon hover:border-pup-maroon hover:text-white flex items-center justify-center text-gray-500 transition-all duration-300 shadow-sm hover:shadow-lg hover:shadow-pup-maroon/30 hover:-translate-y-1.5">
+                    <span class="sr-only">Facebook</span><i data-lucide="facebook" class="h-5 w-5"></i>
+                </a>
+                <a href="#" class="w-12 h-12 rounded-full bg-white/80 border border-gray-100 hover:bg-pup-maroon hover:border-pup-maroon hover:text-white flex items-center justify-center text-gray-500 transition-all duration-300 shadow-sm hover:shadow-lg hover:shadow-pup-maroon/30 hover:-translate-y-1.5">
+                    <span class="sr-only">Twitter</span><i data-lucide="twitter" class="h-5 w-5"></i>
+                </a>
+                <a href="#" class="w-12 h-12 rounded-full bg-white/80 border border-gray-100 hover:bg-pup-maroon hover:border-pup-maroon hover:text-white flex items-center justify-center text-gray-500 transition-all duration-300 shadow-sm hover:shadow-lg hover:shadow-pup-maroon/30 hover:-translate-y-1.5">
+                    <span class="sr-only">Website</span><i data-lucide="globe" class="h-5 w-5"></i>
+                </a>
+            </div>
+
+            <!-- Copyright Bar -->
+            <div class="pt-8 border-t border-gray-200/60 w-full md:w-3/4">
+                <p class="text-xs text-gray-400 font-bold uppercase tracking-wider">
+                    &copy; <?php echo date("Y"); ?> MediLog System. All rights reserved.
+                </p>
+            </div>
+            
         </div>
     </footer>
 
