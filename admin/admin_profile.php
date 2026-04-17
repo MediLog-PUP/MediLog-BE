@@ -7,12 +7,10 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'facu
     exit();
 }
 
-
 $user_id = $_SESSION['user_id'];
 $success_msg = '';
 $error_msg = '';
 
-// Automatically upgrade column to hold Base64 data if needed
 try {
     $pdo->exec("ALTER TABLE users MODIFY profile_pic LONGTEXT");
 } catch (PDOException $e) {}
@@ -31,19 +29,46 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
-    // Handle Profile Picture Upload explicitly directly to Database (Base64)
-    if (isset($_FILES['profile_pic']) && $_FILES['profile_pic']['error'] == 0) {
+    // Handle Profile Picture Upload (Cropped Base64 or standard file fallback)
+    if (isset($_POST['cropped_image_data']) && !empty($_POST['cropped_image_data'])) {
+        $base64_string = $_POST['cropped_image_data'];
+        
+        $image_parts = explode(";base64,", $base64_string);
+        $image_type_aux = explode("image/", $image_parts[0]);
+        $image_type = $image_type_aux[1] ?? 'jpeg';
+        $image_base64 = base64_decode($image_parts[1]);
+
+        $upload_dir = '../uploads/profiles/';
+        if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
+
+        $new_filename = 'admin_' . $user_id . '_' . time() . '.' . $image_type;
+
+        if (file_put_contents($upload_dir . $new_filename, $image_base64)) {
+            $updatePicStmt = $pdo->prepare("UPDATE users SET profile_pic=? WHERE id=?");
+            $updatePicStmt->execute([$new_filename, $user_id]);
+            $success_msg = "Profile picture updated successfully!";
+        } else {
+            $error_msg = "Failed to save the cropped image to the server.";
+        }
+    } else if (isset($_FILES['profile_pic']) && $_FILES['profile_pic']['error'] == 0) {
         $file_tmp = $_FILES['profile_pic']['tmp_name'];
         $file_type = mime_content_type($file_tmp);
         $file_size = $_FILES['profile_pic']['size'];
         
         if (strpos($file_type, 'image/') === 0 && $file_size < 5000000) { 
-            $img_data = file_get_contents($file_tmp);
-            $base64 = 'data:' . $file_type . ';base64,' . base64_encode($img_data);
+            $upload_dir = '../uploads/profiles/';
+            if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
             
-            $updatePicStmt = $pdo->prepare("UPDATE users SET profile_pic=? WHERE id=?");
-            $updatePicStmt->execute([$base64, $user_id]);
-            $success_msg = "Profile picture saved directly to database!";
+            $file_ext = pathinfo($_FILES['profile_pic']['name'], PATHINFO_EXTENSION);
+            $new_filename = 'admin_' . $user_id . '_' . time() . '.' . $file_ext;
+            
+            if (move_uploaded_file($file_tmp, $upload_dir . $new_filename)) {
+                $updatePicStmt = $pdo->prepare("UPDATE users SET profile_pic=? WHERE id=?");
+                $updatePicStmt->execute([$new_filename, $user_id]);
+                $success_msg = "Profile picture updated successfully!";
+            } else {
+                $error_msg = "Failed to save the image to the server.";
+            }
         } else {
             $error_msg = "Invalid file type or size too large (max 5MB).";
         }
@@ -77,6 +102,11 @@ if (!empty($user['profile_pic']) && $user['profile_pic'] !== 'default.png') {
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Cropper.js for image cropping -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
     <script>
         tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { pup: { maroon: '#880000', maroonDark: '#660000', gold: '#F1B500', goldLight: '#FDE68A' } } } } }
     </script>
@@ -87,6 +117,8 @@ if (!empty($user['profile_pic']) && $user['profile_pic'] !== 'default.png') {
         @keyframes fadeOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-10px); } }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        /* Cropper customization */
+        .cropper-view-box, .cropper-face { border-radius: 50%; }
     </style>
 </head>
 <body class="font-sans antialiased text-gray-800 bg-gray-50 flex h-screen overflow-hidden">
@@ -159,20 +191,23 @@ if (!empty($user['profile_pic']) && $user['profile_pic'] !== 'default.png') {
                     <div class="bg-red-50 text-red-700 p-4 rounded-xl text-sm font-medium border border-red-200 flex items-center gap-2"><i data-lucide="alert-circle" class="h-5 w-5"></i> <?= htmlspecialchars($error_msg) ?></div>
                 <?php endif; ?>
 
-                <form action="admin_profile.php" method="POST" enctype="multipart/form-data" class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8">
+                <form id="profileForm" action="admin_profile.php" method="POST" enctype="multipart/form-data" class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8">
                     
+                    <!-- Hidden field to hold cropped image base64 data -->
+                    <input type="hidden" name="cropped_image_data" id="cropped_image_data">
+
                     <div class="flex flex-col sm:flex-row items-center gap-6 mb-8 pb-6 border-b border-gray-100">
                         <div class="relative">
-                            <img src="<?= $profile_pic ?>" alt="Profile Picture" class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md">
+                            <img id="profileImagePreview" src="<?= $profile_pic ?>" alt="Profile Picture" class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md">
                             <label for="profile_pic_upload" class="absolute bottom-0 right-0 bg-pup-maroon hover:bg-pup-maroonDark text-white p-2 rounded-full cursor-pointer shadow-sm transition-colors border-2 border-white">
                                 <i data-lucide="camera" class="h-4 w-4"></i>
                             </label>
-                            <input type="file" id="profile_pic_upload" name="profile_pic" class="hidden" accept="image/jpeg, image/png, image/gif" onchange="this.form.submit()">
+                            <input type="file" id="profile_pic_upload" name="profile_pic" class="hidden" accept="image/jpeg, image/png, image/gif" onchange="openCropModal(event)">
                         </div>
                         <div class="text-center sm:text-left">
                             <h3 class="text-lg font-bold text-gray-900">Admin Photo</h3>
                             <p class="text-sm text-gray-500 mt-1">JPG, GIF or PNG. Max size of 5MB.</p>
-                            <p class="text-xs text-gray-400 mt-1 italic">Select a new image to auto-save.</p>
+                            <p class="text-xs text-gray-400 mt-1 italic">Click the camera icon to adjust and crop your new photo.</p>
                         </div>
                     </div>
 
@@ -215,6 +250,26 @@ if (!empty($user['profile_pic']) && $user['profile_pic'] !== 'default.png') {
         </div>
     </main>
 
+    <!-- Crop Image Modal -->
+    <div id="cropModal" class="fixed inset-0 z-[100] hidden bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-900">Crop Profile Picture</h3>
+                <button type="button" onclick="closeCropModal()" class="text-gray-400 hover:text-gray-600 focus:outline-none"><i data-lucide="x" class="h-5 w-5"></i></button>
+            </div>
+            <div class="p-6 bg-gray-100 flex justify-center items-center" style="height: 400px;">
+                <div class="w-full h-full">
+                    <img id="imageToCrop" src="" alt="Picture" class="max-w-full max-h-full block mx-auto">
+                </div>
+            </div>
+            <div class="bg-white px-6 py-4 flex justify-end gap-3 border-t border-gray-100">
+                <button type="button" onclick="closeCropModal()" class="px-4 py-2 bg-white border border-gray-300 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors">Cancel</button>
+                <button type="button" onclick="applyCrop()" class="px-4 py-2 bg-pup-maroon text-white rounded-xl text-sm font-bold hover:bg-red-900 flex items-center gap-2 transition-colors">Apply & Save <i data-lucide="check" class="h-4 w-4"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Modal -->
     <div id="logoutModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div id="logoutModalOverlay" class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity opacity-0 duration-300" onclick="closeLogoutModal()"></div>
@@ -227,16 +282,80 @@ if (!empty($user['profile_pic']) && $user['profile_pic'] !== 'default.png') {
                     </div>
                 </div>
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 flex flex-col sm:flex-row-reverse gap-2">
-                    <a href="../auth/logout.php" class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:w-auto sm:text-sm transition-colors text-center">Sign Out</a>
+                    <a href="../logout.php" class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:w-auto sm:text-sm transition-colors text-center">Sign Out</a>
                     <button type="button" onclick="closeLogoutModal()" class="w-full inline-flex justify-center rounded-xl border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:w-auto sm:text-sm transition-colors">Cancel</button>
                 </div>
             </div>
         </div>
     </div>
+    
     <script>
         lucide.createIcons();
         function openLogoutModal() { const m = document.getElementById('logoutModal'); m.classList.remove('hidden'); setTimeout(() => { document.getElementById('logoutModalOverlay').classList.replace('opacity-0', 'opacity-100'); document.getElementById('logoutModalPanel').classList.replace('opacity-0', 'opacity-100'); document.getElementById('logoutModalPanel').classList.replace('translate-y-4', 'translate-y-0'); document.getElementById('logoutModalPanel').classList.replace('sm:scale-95', 'sm:scale-100'); }, 10); }
         function closeLogoutModal() { document.getElementById('logoutModalOverlay').classList.replace('opacity-100', 'opacity-0'); document.getElementById('logoutModalPanel').classList.replace('opacity-100', 'opacity-0'); document.getElementById('logoutModalPanel').classList.replace('translate-y-0', 'translate-y-4'); document.getElementById('logoutModalPanel').classList.replace('sm:scale-100', 'sm:scale-95'); setTimeout(() => document.getElementById('logoutModal').classList.add('hidden'), 300); }
+
+        let cropper = null;
+        const imageToCrop = document.getElementById('imageToCrop');
+        const cropModal = document.getElementById('cropModal');
+        const profilePicInput = document.getElementById('profile_pic_upload');
+        const croppedDataInput = document.getElementById('cropped_image_data');
+        const profileForm = document.getElementById('profileForm');
+
+        function openCropModal(event) {
+            const files = event.target.files;
+            if (files && files.length > 0) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imageToCrop.src = e.target.result;
+                    cropModal.classList.remove('hidden');
+                    
+                    if (cropper) {
+                        cropper.destroy();
+                    }
+                    
+                    setTimeout(() => {
+                        cropper = new Cropper(imageToCrop, {
+                            aspectRatio: 1, 
+                            viewMode: 1,
+                            autoCropArea: 1,
+                            dragMode: 'move',
+                            guides: false,
+                            center: true,
+                            highlight: false,
+                            cropBoxMovable: true,
+                            cropBoxResizable: true,
+                        });
+                    }, 100);
+                };
+                reader.readAsDataURL(files[0]);
+            }
+        }
+
+        function closeCropModal() {
+            cropModal.classList.add('hidden');
+            profilePicInput.value = ''; 
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+        }
+
+        function applyCrop() {
+            if (!cropper) return;
+            
+            const canvas = cropper.getCroppedCanvas({
+                width: 400,
+                height: 400
+            });
+            
+            const base64Data = canvas.toDataURL('image/jpeg', 0.9);
+            
+            croppedDataInput.value = base64Data;
+            document.getElementById('profileImagePreview').src = base64Data;
+            
+            closeCropModal();
+            profileForm.submit();
+        }
     </script>
 </body>
 </html>

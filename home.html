@@ -1,272 +1,162 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MediLog - PUP Clinic Portal</title>
-    
-    <!-- Tailwind CSS -->
+    <title>MediLog System Flowchart Visualizer</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-
-    <!-- Tailwind Config for PUP Colors -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                    colors: {
-                        pup: {
-                            maroon: '#880000',
-                            maroonDark: '#660000',
-                            gold: '#F1B500',
-                            goldLight: '#FDE68A',
-                        }
-                    }
-                }
-            }
-        }
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ 
+            startOnLoad: true, 
+            theme: 'default',
+            securityLevel: 'loose',
+            fontFamily: 'Inter, sans-serif'
+        });
     </script>
     <style>
-        /* Custom pattern background for hero */
-        .bg-pattern {
-            background-image: radial-gradient(#880000 0.5px, transparent 0.5px), radial-gradient(#880000 0.5px, #ffffff 0.5px);
-            background-size: 20px 20px;
-            background-position: 0 0, 10px 10px;
-            opacity: 0.03;
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap');
+        body { 
+            background-color: #f9fafb; 
+            padding: 2rem; 
+            font-family: 'Inter', sans-serif; 
         }
-
-        /* Page Transition Styles */
-        body {
-            opacity: 0;
-            animation: fadeIn 0.4s ease-out forwards;
+        .diagram-container { 
+            background: white; 
+            padding: 2rem; 
+            border-radius: 1rem; 
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); 
+            margin-bottom: 3rem; 
+            overflow-x: auto;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        h2 { 
+            color: #880000; 
+            margin-bottom: 2rem; 
+            text-align: center; 
+            font-weight: 800; 
+            font-size: 1.5rem;
+            border-bottom: 2px solid #f3f4f6;
+            padding-bottom: 1rem;
         }
-        .page-exit {
-            animation: fadeOut 0.3s ease-in forwards !important;
-        }
-        @keyframes fadeOut {
-            from { opacity: 1; transform: translateY(0); }
-            to { opacity: 0; transform: translateY(-10px); }
+        .mermaid { 
+            display: flex; 
+            justify-content: center; 
         }
     </style>
 </head>
-<body class="font-sans antialiased text-gray-800 bg-gray-50 relative">
-
-    <!-- Navigation -->
-    <nav class="bg-white border-b border-gray-100 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-20">
-                <div class="flex items-center gap-3">
-                    <!-- Logo / Brand -->
-                    <div class="flex-shrink-0 flex items-center bg-pup-maroon text-white p-2 rounded-lg">
-                        <i data-lucide="clipboard-heart" class="h-8 w-8 text-pup-gold"></i>
-                    </div>
-                    <div>
-                        <span class="font-bold text-2xl tracking-tight text-pup-maroon">MediLog</span>
-                        <span class="block text-xs font-medium text-gray-500 -mt-1">PUP Clinic Portal</span>
-                    </div>
-                </div>
-                
-                <!-- Desktop Menu -->
-                <div class="hidden md:flex items-center space-x-8">
-                    <a href="#" class="text-gray-600 hover:text-pup-maroon font-medium transition-colors">Home</a>
-                    <a href="#services" class="text-gray-600 hover:text-pup-maroon font-medium transition-colors">Services</a>
-                    <a href="#about" class="text-gray-600 hover:text-pup-maroon font-medium transition-colors">About</a>
-                    <a href="index.html" class="px-5 py-2.5 rounded-full bg-pup-maroon text-white font-medium hover:bg-pup-maroonDark transition-colors shadow-sm">
-                        Portal Login
-                    </a>
-                </div>
-
-                <!-- Mobile menu button -->
-                <div class="flex items-center md:hidden">
-                    <button class="text-gray-500 hover:text-gray-900 focus:outline-none p-2">
-                        <i data-lucide="menu" class="h-6 w-6"></i>
-                    </button>
-                </div>
-            </div>
+<body>
+    <div class="max-w-7xl mx-auto">
+        <div class="text-center mb-10">
+            <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">MediLog System Architecture</h1>
+            <p class="text-gray-500 mt-2 font-medium">Interactive Flowchart Visualization</p>
         </div>
-    </nav>
 
-    <!-- Hero Section -->
-    <div class="relative bg-white overflow-hidden">
-        <div class="absolute inset-0 bg-pattern pointer-events-none"></div>
-        <div class="max-w-7xl mx-auto">
-            <div class="relative z-10 pb-8 bg-transparent sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32 pt-16 sm:pt-24 lg:pt-32 px-4 sm:px-6 lg:px-8">
-                
-                <div class="sm:text-center lg:text-left">
-                    <div class="inline-flex items-center px-3 py-1 rounded-full bg-pup-goldLight text-pup-maroon text-sm font-semibold mb-6">
-                        <span class="flex h-2 w-2 rounded-full bg-pup-maroon mr-2"></span>
-                        Official Health Portal of the Iskolars ng Bayan
-                    </div>
-                    <h1 class="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
-                        <span class="block xl:inline">Your Health &</span>
-                        <span class="block text-pup-maroon">Wellness Priority</span>
-                    </h1>
-                    <p class="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
-                        Book appointments, manage your personal health records, view request statuses, and connect with PUP's healthcare professionals easily through MediLog.
-                    </p>
-                    
-                    <!-- Main Call to Action Buttons -->
-                    <div class="mt-8 sm:mt-10 sm:flex sm:justify-center lg:justify-start gap-4">
-                        <div class="rounded-md shadow">
-                            <a href="#services" class="w-full flex items-center justify-center px-8 py-4 border border-transparent text-lg font-semibold rounded-xl text-white bg-pup-maroon hover:bg-pup-maroonDark transition-all duration-200 transform hover:-translate-y-1 hover:shadow-lg shadow-pup-maroon/30">
-                                <!-- Medical Cross SVG -->
-                                <svg class="w-6 h-6 mr-3 text-pup-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H13V5a2 2 0 00-2-2H11a2 2 0 00-2 2v6H3a2 2 0 00-2 2v2a2 2 0 002 2h6v6a2 2 0 002 2h2a2 2 0 002-2v-6h6a2 2 0 002-2v-2a2 2 0 00-2-2z"></path></svg>
-                                View Services
-                            </a>
-                        </div>
-                        <div class="mt-3 sm:mt-0">
-                            <a href="index.html" class="w-full flex items-center justify-center px-8 py-4 border-2 border-pup-maroon text-lg font-semibold rounded-xl text-pup-maroon bg-white hover:bg-gray-50 transition-all duration-200 transform hover:-translate-y-1 hover:shadow-md">
-                                <i data-lucide="log-in" class="h-6 w-6 mr-3"></i>
-                                Portal Login
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <!-- Legend / Key -->
+        <div class="flex flex-wrap justify-center gap-4 mb-8">
+            <div class="flex items-center gap-2"><div class="w-4 h-4 bg-[#fee2e2] border-2 border-[#ef4444] rounded"></div><span class="text-sm font-medium text-gray-700">Student Portal</span></div>
+            <div class="flex items-center gap-2"><div class="w-4 h-4 bg-[#e0f2fe] border-2 border-[#3b82f6] rounded"></div><span class="text-sm font-medium text-gray-700">Clinic Admin</span></div>
+            <div class="flex items-center gap-2"><div class="w-4 h-4 bg-[#fef3c7] border-2 border-[#f59e0b] rounded"></div><span class="text-sm font-medium text-gray-700">Dental Faculty</span></div>
+            <div class="flex items-center gap-2"><div class="w-4 h-4 bg-[#f3e8ff] border-2 border-[#a855f7] rounded"></div><span class="text-sm font-medium text-gray-700">Super Admin</span></div>
+            <div class="flex items-center gap-2"><div class="w-4 h-4 bg-[#e5e7eb] border-2 border-[#9ca3af] rounded-full"></div><span class="text-sm font-medium text-gray-700">Database</span></div>
         </div>
-        
-        <!-- Hero Image Right Side -->
-        <div class="hidden lg:block lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2">
-            <img class="h-56 w-full object-cover sm:h-72 md:h-96 lg:w-full lg:h-full opacity-90 rounded-bl-[100px]" src="https://images.unsplash.com/photo-1579684385127-1ef15d508118?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" alt="Medical Clinic Staff">
-            <div class="absolute inset-0 bg-gradient-to-r from-white via-white/40 to-transparent"></div>
-        </div>
-    </div>
 
-    <!-- Features / Services Overview Section -->
-    <div id="services" class="py-16 bg-gray-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center max-w-3xl mx-auto mb-16">
-                <h2 class="text-base text-pup-maroon font-semibold tracking-wide uppercase">Clinic Services</h2>
-                <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-                    Comprehensive care for students
-                </p>
-                <p class="mt-4 max-w-2xl text-xl text-gray-500 mx-auto">
-                    We offer a wide range of free services to ensure the well-being of the PUP community through accessible digital systems.
-                </p>
-            </div>
+        <div class="diagram-container">
+            <h2>Complete System Workflow</h2>
+            <div class="mermaid">
+                flowchart TD
+                    %% Styling
+                    classDef start_end fill:#111827,stroke:#000,stroke-width:2px,color:#fff,font-weight:bold;
+                    classDef db fill:#e5e7eb,stroke:#9ca3af,stroke-width:2px,color:#111827;
+                    classDef student fill:#fee2e2,stroke:#ef4444,stroke-width:2px,color:#7f1d1d;
+                    classDef admin fill:#e0f2fe,stroke:#3b82f6,stroke-width:2px,color:#1e3a8a;
+                    classDef dentist fill:#fef3c7,stroke:#f59e0b,stroke-width:2px,color:#78350f;
+                    classDef super fill:#f3e8ff,stroke:#a855f7,stroke-width:2px,color:#581c87;
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                <!-- Card 1 -->
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 hover:shadow-md transition-shadow">
-                    <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-6">
-                        <i data-lucide="calendar-check" class="h-6 w-6 text-pup-maroon"></i>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Book Appointments</h3>
-                    <p class="text-gray-600">Easily schedule and view your appointments for general medical check-ups and consultations.</p>
-                </div>
+                    Start((Start)):::start_end --> Landing[Landing Page\nindex.php]
 
-                <!-- Card 2 -->
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 hover:shadow-md transition-shadow">
-                    <div class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center mb-6">
-                        <i data-lucide="folder-clock" class="h-6 w-6 text-pup-gold"></i>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Health Records & Status</h3>
-                    <p class="text-gray-600">Securely edit, update, and track the real-time status of your medical requests and records.</p>
-                </div>
+                    %% Authentication
+                    Landing -->|Student Path| StuLogin[Student Login]:::student
+                    Landing -->|Staff Path| StaffLogin[Faculty/Admin Login]:::admin
 
-                <!-- Card 3 -->
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 hover:shadow-md transition-shadow">
-                    <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mb-6">
-                        <i data-lucide="file-bar-chart-2" class="h-6 w-6 text-blue-600"></i>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Reports & Summaries</h3>
-                    <p class="text-gray-600">Generate clear summaries of medical assessments based on the verified data provided.</p>
-                </div>
+                    StuLogin -->|New User| Register[Register Account]:::student
+                    Register --> StuLogin
+                    StuLogin -->|Auth Success| StuDash[Student Dashboard]:::student
 
-                <!-- Card 4 -->
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 hover:shadow-md transition-shadow">
-                    <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-6">
-                        <i data-lucide="message-square-text" class="h-6 w-6 text-green-600"></i>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Inquiries & Info</h3>
-                    <p class="text-gray-600">Access helpful health advisories and swiftly get responses to inquiries regarding clinic services.</p>
-                </div>
+                    %% -----------------------------------------------------
+                    %% STUDENT PORTAL
+                    %% -----------------------------------------------------
+                    subgraph Student Portal
+                        StuDash --> BookAppt[Book Appointment]:::student
+                        BookAppt -->|General/Clearance/Counseling| ApptDB[(Appointments DB)]:::db
+                        BookAppt -->|Dental Services| SelectDental[Select Procedure\nPasta, Bunot, etc.]:::student --> ApptDB
+
+                        StuDash --> HealthRec[Health Records]:::student
+                        HealthRec --> ViewGen[View General Records]:::student
+                        HealthRec --> ViewDen[View Dental Records]:::student
+
+                        StuDash --> MedClear[Medical Clearance]:::student
+                        MedClear --> ReqClear[Request Clearance]:::student --> ClearDB[(Clearances DB)]:::db
+
+                        StuDash --> StuChat[Messages / Chatbox]:::student --> ChatDB[(Messages DB)]:::db
+                        StuDash --> StuProf[Student Profile]:::student
+                        StuDash --> StuNotif[Notifications]:::student
+                    end
+
+                    %% -----------------------------------------------------
+                    %% ADMIN ROUTING
+                    %% -----------------------------------------------------
+                    StaffLogin -->|Auth Success| RoleCheck{Check Role}:::admin
+
+                    RoleCheck -->|Super Admin| SADash[Admin Management\nsuper_admin_users.php]:::super
+                    SADash --> AdminDash[Admin Dashboard]:::admin
+
+                    RoleCheck -->|Admin / Faculty| AdminDash
+
+                    %% -----------------------------------------------------
+                    %% GENERAL ADMIN PORTAL
+                    %% -----------------------------------------------------
+                    subgraph General Admin Portal
+                        AdminDash --> Inv[Medicine Inventory]:::admin <--> InvDB[(Inventory DB)]:::db
+                        AdminDash --> PatRec[Patient Records]:::admin <--> UsersDB[(Users DB)]:::db
+                        
+                        AdminDash --> TreatRec[Treatment Records]:::admin --> TreatDB[(Health Records DB)]:::db
+                        TreatRec -.->|Dispense Meds\nAuto-Deduct| InvDB
+
+                        AdminDash --> AdmAppt[Appointments Management]:::admin
+                        ApptDB -->|Fetch Pending/Completed| AdmAppt
+                        AdmAppt -->|Start/Complete/Cancel| ApptDB
+                        AdmAppt -->|Auto-Create Record| TreatDB
+
+                        AdminDash --> AdmClear[Clearances Management]:::admin
+                        ClearDB -->|Fetch Pending| AdmClear
+                        AdmClear -->|Approve/Reject| ClearDB
+
+                        AdminDash --> AdmChat[Student Inquiries]:::admin <--> ChatDB
+                        AdminDash --> AdmProf[Admin Profile]:::admin
+                        AdminDash --> AdmNotif[System Alerts & Logs]:::admin
+                    end
+
+                    %% -----------------------------------------------------
+                    %% DENTIST PORTAL
+                    %% -----------------------------------------------------
+                    RoleCheck -->|Dentist| DenDash[Dentist Dashboard]:::dentist
+
+                    subgraph Dental Portal
+                        DenDash --> DenReq[Dental Requests]:::dentist
+                        ApptDB -->|Fetch Pending Dental| DenReq
+                        DenReq -->|Approve/Reject| ApptDB
+
+                        DenDash --> DenProc[Dental Procedures]:::dentist
+                        ApptDB -->|Fetch Approved Dental| DenProc
+                        
+                        DenProc -->|Perform & Evaluate| EvalAction[Save Evaluation]:::dentist
+                        EvalAction -->|1. Save Notes| EvalDB[(Dental Eval DB)]:::db
+                        EvalAction -->|2. Mark Complete| ApptDB
+                        EvalAction -->|3. Save to History| TreatDB
+                        EvalAction -->|4. Send Remarks| NotifDB[(Notifications DB)]:::db
+                    end
             </div>
         </div>
     </div>
-
-    <!-- Floating Help Button -->
-    <button class="fixed bottom-6 right-6 bg-pup-maroon text-white p-4 rounded-full shadow-lg hover:bg-pup-maroonDark transition-transform transform hover:-translate-y-1 hover:shadow-xl z-50 flex items-center justify-center group" aria-label="Help and Inquiries">
-        <i data-lucide="message-circle-question" class="h-6 w-6"></i>
-        <span class="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-300 ease-in-out font-medium group-hover:ml-2 group-hover:mr-1 text-sm">Send an Inquiry</span>
-    </button>
-
-    <!-- Footer -->
-    <footer class="bg-gray-900 text-white border-t-4 border-pup-maroon">
-        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div>
-                    <div class="flex items-center gap-2 mb-4">
-                        <i data-lucide="clipboard-heart" class="h-6 w-6 text-pup-gold"></i>
-                        <span class="font-bold text-xl tracking-tight text-white">MediLog</span>
-                    </div>
-                    <p class="text-gray-400 text-sm leading-relaxed">
-                        The official clinic portal for the Polytechnic University of the Philippines. Empowering student health through accessible digital logs and scheduling.
-                    </p>
-                </div>
-                <div>
-                    <h4 class="text-lg font-semibold mb-4">Quick Links</h4>
-                    <ul class="space-y-2 text-sm text-gray-400">
-                        <li><a href="#" class="hover:text-pup-gold transition-colors">Book Appointment</a></li>
-                        <li><a href="#" class="hover:text-pup-gold transition-colors">Medical Records</a></li>
-                        <li><a href="#" class="hover:text-pup-gold transition-colors">Clinic Schedule</a></li>
-                        <li><a href="#" class="hover:text-pup-gold transition-colors">Contact Administrator</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="text-lg font-semibold mb-4">Clinic Hours</h4>
-                    <ul class="space-y-2 text-sm text-gray-400">
-                        <li class="flex justify-between"><span>Monday - Friday:</span> <span>8:00 AM - 5:00 PM</span></li>
-                        <li class="flex justify-between"><span>Saturday:</span> <span>8:00 AM - 12:00 NN</span></li>
-                        <li class="flex justify-between text-pup-maroon font-medium"><span>Sunday:</span> <span>Closed</span></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="mt-8 pt-8 border-t border-gray-800 text-sm text-gray-500 text-center flex flex-col md:flex-row justify-between items-center gap-4">
-                <p>&copy; 2026 MediLog - Polytechnic University of the Philippines. All rights reserved.</p>
-                <div class="flex space-x-4">
-                    <a href="#" class="text-gray-500 hover:text-white"><i data-lucide="facebook" class="h-5 w-5"></i></a>
-                    <a href="#" class="text-gray-500 hover:text-white"><i data-lucide="mail" class="h-5 w-5"></i></a>
-                </div>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Initialize Icons -->
-    <script>
-        lucide.createIcons();
-
-        // Page Transition Logic
-        document.addEventListener('DOMContentLoaded', () => {
-            const links = document.querySelectorAll('a[href]');
-            links.forEach(link => {
-                link.addEventListener('click', e => {
-                    const href = link.getAttribute('href');
-                    // Skip transition for hashes, new tabs, or empty links
-                    if (!href || href.startsWith('#') || link.getAttribute('target') === '_blank') return;
-                    
-                    e.preventDefault();
-                    document.body.classList.add('page-exit');
-                    setTimeout(() => {
-                        window.location.href = href;
-                    }, 250); // Navigate right before animation fully ends
-                });
-            });
-        });
-    </script>
 </body>
 </html>

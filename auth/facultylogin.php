@@ -2,12 +2,33 @@
 session_start();
 require '../db_connect.php';
 
+// --- AUTO DATABASE UPGRADE FOR DENTAL FEATURES ---
+try {
+    // Safely add the 'dentist' role to the users table
+    $pdo->exec("ALTER TABLE users MODIFY COLUMN role ENUM('student', 'faculty', 'admin', 'super_admin', 'dentist') DEFAULT 'student'");
+    
+    // Create the dental_evaluations table for post-procedure notes
+    $pdo->exec("CREATE TABLE IF NOT EXISTS dental_evaluations (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        appointment_id INT NOT NULL,
+        patient_id INT NOT NULL,
+        dentist_id INT NOT NULL,
+        procedure_done VARCHAR(100) NOT NULL,
+        evaluation_notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )");
+} catch (PDOException $e) {
+    // Ignore if already created
+}
+
 // Redirect if already logged in based on specific roles
 if (isset($_SESSION['user_id'])) {
     if ($_SESSION['role'] === 'student') {
         header("Location: ../student/student_dashboard.php");
     } else if ($_SESSION['role'] === 'super_admin') {
         header("Location: ../admin/super_admin_users.php");
+    } else if ($_SESSION['role'] === 'dentist') {
+        header("Location: ../dentist/dentist_dashboard.php");
     } else {
         header("Location: ../admin/admin_dashboard.php");
     }
@@ -19,8 +40,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $id_number = trim($_POST['id_number']);
     $password = $_POST['password'];
 
-    // ALLOW SUPER ADMIN TO LOG IN AS WELL AS REGULAR ADMIN/FACULTY
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE id_number = ? AND role IN ('admin', 'faculty', 'super_admin')");
+    // ALLOW DENTIST TO LOG IN AS WELL AS ADMINS/FACULTY
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE id_number = ? AND role IN ('admin', 'faculty', 'super_admin', 'dentist')");
     $stmt->execute([$id_number]);
     $user = $stmt->fetch();
 
@@ -28,9 +49,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['role'] = $user['role'];
         
-        // Custom Routing: Send Super Admins directly to their management dashboard
+        // Custom Routing: Send Dentists directly to their dashboard
         if ($user['role'] === 'super_admin') {
             header("Location: ../admin/super_admin_users.php");
+        } else if ($user['role'] === 'dentist') {
+            header("Location: ../dentist/dentist_dashboard.php");
         } else {
             header("Location: ../admin/admin_dashboard.php");
         }
@@ -45,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clinic Admin Login - MediLog</title>
+    <title>Clinic & Dental Admin Login - MediLog</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -55,7 +78,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </head>
 <body class="font-sans antialiased text-gray-800 bg-gray-50 flex items-center justify-center min-h-screen relative overflow-hidden bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
 
-    <!-- Global Loader -->
     <?php include '../global_loader.php'; ?>
 
     <div class="absolute top-0 w-full h-2 bg-gray-900"></div>
@@ -67,8 +89,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </div>
         </div>
         
-        <h2 class="text-2xl font-extrabold text-center text-gray-900 mb-2">Clinic Administration</h2>
-        <p class="text-center text-gray-500 text-sm mb-8">Sign in to the MediLog staff portal</p>
+        <h2 class="text-2xl font-extrabold text-center text-gray-900 mb-2">Staff Administration</h2>
+        <p class="text-center text-gray-500 text-sm mb-8">Sign in for Clinic Admins & Dental Faculty</p>
 
         <?php if($error): ?>
             <div class="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-semibold mb-6 flex items-center gap-2 border border-red-100">

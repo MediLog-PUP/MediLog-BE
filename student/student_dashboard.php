@@ -141,12 +141,18 @@ $upcoming_appointment = $apptStmt->fetch();
 
                     <div class="space-y-6">
                         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                            <h3 class="text-lg font-bold text-gray-900 mb-4">Patient Profile</h3>
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-bold text-gray-900">Patient Profile</h3>
+                                <a href="student_profile.php" class="text-sm font-medium text-pup-maroon hover:underline">Edit Details</a>
+                            </div>
                             <div class="space-y-4">
                                 <div class="flex justify-between items-center pb-3 border-b border-gray-100"><span class="text-sm text-gray-500">Student ID</span><span class="text-sm font-semibold text-gray-900"><?= htmlspecialchars($user['id_number']) ?></span></div>
+                                <div class="flex justify-between items-center pb-3 border-b border-gray-100"><span class="text-sm text-gray-500">Course & Section</span><span class="text-sm font-semibold text-gray-900"><?= htmlspecialchars($user['course'] ?? 'N/A') ?> <?= htmlspecialchars($user['section'] ?? '') ?></span></div>
+                                <div class="flex justify-between items-center pb-3 border-b border-gray-100"><span class="text-sm text-gray-500">Phone Number</span><span class="text-sm font-semibold text-gray-900"><?= htmlspecialchars($user['phone_number'] ?? 'Not Set') ?></span></div>
                                 <div class="flex justify-between items-center pb-3 border-b border-gray-100"><span class="text-sm text-gray-500">Blood Type</span><span class="text-sm font-semibold text-red-600"><?= htmlspecialchars($user['blood_type'] ?? 'Not Set') ?></span></div>
-                                <div class="flex justify-between items-center pb-3 border-b border-gray-100"><span class="text-sm text-gray-500">Allergies</span><span class="text-sm font-semibold text-gray-900"><?= htmlspecialchars($user['allergies'] ?? 'Not Set') ?></span></div>
-                                <div class="flex justify-between items-center"><span class="text-sm text-gray-500">Emergency Contact</span><a href="student_profile.php" class="text-sm font-semibold text-pup-maroon hover:underline">Update Details</a></div>
+                                <div class="flex justify-between items-center pb-3 border-b border-gray-100"><span class="text-sm text-gray-500">Allergies</span><span class="text-sm font-semibold text-gray-900"><?= htmlspecialchars($user['allergies'] ?? 'None') ?></span></div>
+                                <div class="flex justify-between items-center pb-3 border-b border-gray-100"><span class="text-sm text-gray-500">Emergency Contact</span><span class="text-sm font-semibold text-gray-900"><?= htmlspecialchars($user['emergency_contact_name'] ?? 'Not Set') ?></span></div>
+                                <div class="flex justify-between items-center"><span class="text-sm text-gray-500">Emergency Phone</span><span class="text-sm font-semibold text-gray-900"><?= htmlspecialchars($user['emergency_contact_phone'] ?? 'Not Set') ?></span></div>
                             </div>
                         </div>
                     </div>

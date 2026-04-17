@@ -2,41 +2,20 @@
 session_start();
 require '../db_connect.php';
 
-// --- MAGIC UPGRADE BACKDOOR ---
-// To create your first Super Admin and modify your DB, go to: admin/super_admin_users.php?upgrade_me=1
-if (isset($_GET['upgrade_me']) && isset($_SESSION['user_id'])) {
-    try {
-        // Safely alter the ENUM to include super_admin (adjust as necessary if your DB uses VARCHAR)
-        $pdo->exec("ALTER TABLE users MODIFY COLUMN role ENUM('student', 'faculty', 'admin', 'super_admin') DEFAULT 'student'");
-    } catch (PDOException $e) {
-        // Ignore if already modified or unsupported
-    }
-    
-    // Promote current user
-    $pdo->prepare("UPDATE users SET role = 'super_admin' WHERE id = ?")->execute([$_SESSION['user_id']]);
-    $_SESSION['role'] = 'super_admin';
-    header("Location: super_admin_users.php");
-    exit();
-}
-
-// Check if logged in
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../auth/facultylogin.php");
     exit();
 }
 
 $user_id = $_SESSION['user_id'];
-
-// FETCH LATEST USER DATA FIRST to sync the role (Fixes issues when edited directly via phpMyAdmin)
 $stmt = $pdo->prepare("SELECT full_name, profile_pic, role FROM users WHERE id = ?");
 $stmt->execute([$user_id]);
 $user = $stmt->fetch();
 
 if ($user) {
-    $_SESSION['role'] = $user['role']; // Force session to update to the newest DB role
+    $_SESSION['role'] = $user['role']; 
 }
 
-// ALLOW admin and super_admin so the page loads and shows the UI lock screen instead of redirecting!
 if (!in_array($_SESSION['role'], ['admin', 'faculty', 'super_admin'])) {
     header("Location: ../auth/facultylogin.php");
     exit();
@@ -46,7 +25,6 @@ $is_super_admin = ($_SESSION['role'] === 'super_admin');
 $success_msg = '';
 $error_msg = '';
 
-// ONLY process form submissions and fetch admin lists IF the user is a true super admin
 if ($is_super_admin) {
     if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] === 'add_admin') {
         $full_name = trim($_POST['full_name']);
@@ -70,7 +48,7 @@ if ($is_super_admin) {
         }
     }
 
-    $adminsStmt = $pdo->query("SELECT id, full_name, id_number, email, role FROM users WHERE role IN ('admin', 'faculty', 'super_admin') ORDER BY role DESC, full_name ASC");
+    $adminsStmt = $pdo->query("SELECT id, full_name, id_number, email, role FROM users WHERE role IN ('admin', 'faculty', 'super_admin', 'dentist') ORDER BY role DESC, full_name ASC");
     $admins = $adminsStmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
@@ -101,7 +79,6 @@ if (!empty($user['profile_pic']) && $user['profile_pic'] !== 'default.png') {
 
     <?php include '../global_loader.php'; ?>
 
-    <!-- DESKTOP SIDEBAR -->
     <aside class="hidden md:flex flex-col w-64 bg-gray-900 text-white h-full shadow-xl z-20 flex-shrink-0">
         <div class="p-6 flex items-center gap-3 border-b border-gray-800">
             <div class="bg-pup-gold text-gray-900 p-2 rounded-lg"><i data-lucide="shield-plus" class="h-6 w-6"></i></div>
@@ -116,7 +93,6 @@ if (!empty($user['profile_pic']) && $user['profile_pic'] !== 'default.png') {
             <a href="admin_clearance.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="file-check-2" class="h-5 w-5"></i> Clearances</a>
             <a href="admin_inquiries.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="message-square" class="h-5 w-5"></i> Inquiries</a>
             <a href="admin_profile.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="user-cog" class="h-5 w-5"></i> Profile</a>
-            
             <a href="super_admin_users.php" class="flex items-center gap-3 px-4 py-3 bg-pup-maroon text-white rounded-xl font-medium transition-colors shadow-sm"><i data-lucide="shield-alert" class="h-5 w-5"></i> Admin Management</a>
         </nav>
         <div class="p-4 border-t border-gray-800">
@@ -142,11 +118,8 @@ if (!empty($user['profile_pic']) && $user['profile_pic'] !== 'default.png') {
             <div class="max-w-6xl mx-auto space-y-6">
                 
                 <?php if(!$is_super_admin): ?>
-                    <!-- ACCESS DENIED MESSAGE FOR REGULAR ADMINS -->
                     <div class="bg-white rounded-2xl border border-red-200 shadow-sm overflow-hidden flex flex-col items-center justify-center p-12 text-center mt-10">
-                        <div class="bg-red-50 p-6 rounded-full mb-4">
-                            <i data-lucide="lock" class="h-16 w-16 text-red-500"></i>
-                        </div>
+                        <div class="bg-red-50 p-6 rounded-full mb-4"><i data-lucide="lock" class="h-16 w-16 text-red-500"></i></div>
                         <h2 class="text-2xl font-extrabold text-gray-900 mb-2">Access Restricted</h2>
                         <p class="text-gray-500 max-w-md">Only Super Admins may view or modify system administrator accounts. If you require access, please contact the system administrator.</p>
                         <a href="admin_dashboard.php" class="mt-6 inline-flex items-center gap-2 bg-gray-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-gray-800 transition-colors">
@@ -154,7 +127,6 @@ if (!empty($user['profile_pic']) && $user['profile_pic'] !== 'default.png') {
                         </a>
                     </div>
                 <?php else: ?>
-                    <!-- FULL MANAGEMENT UI FOR SUPER ADMINS -->
                     <?php if($success_msg): ?>
                         <div class="bg-green-50 text-green-700 p-4 rounded-xl text-sm font-medium border border-green-200 flex items-center gap-2">
                             <i data-lucide="check-circle-2" class="h-5 w-5"></i> <?= htmlspecialchars($success_msg) ?>
@@ -190,6 +162,8 @@ if (!empty($user['profile_pic']) && $user['profile_pic'] !== 'default.png') {
                                             <td class="p-4">
                                                 <?php if($a['role'] === 'super_admin'): ?>
                                                     <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-bold">Super Admin</span>
+                                                <?php elseif($a['role'] === 'dentist'): ?>
+                                                    <span class="bg-teal-100 text-teal-700 px-3 py-1 rounded-full text-xs font-bold">Dental Faculty</span>
                                                 <?php else: ?>
                                                     <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold">Clinic Admin</span>
                                                 <?php endif; ?>
@@ -204,43 +178,9 @@ if (!empty($user['profile_pic']) && $user['profile_pic'] !== 'default.png') {
 
             </div>
         </div>
-
-        <!-- NEW MOBILE BOTTOM BAR -->
-        <nav class="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-40 pb-safe">
-            <div class="flex items-center overflow-x-auto no-scrollbar snap-x snap-mandatory">
-                <a href="admin_dashboard.php" class="snap-center flex-1 min-w-[70px] flex flex-col items-center justify-center p-3 text-gray-400 hover:text-pup-maroon transition-colors relative">
-                    <i data-lucide="layout-dashboard" class="h-6 w-6 mb-1"></i>
-                    <span class="text-[10px] font-bold">Home</span>
-                </a>
-                <a href="patient_records.php" class="snap-center flex-1 min-w-[70px] flex flex-col items-center justify-center p-3 text-gray-400 hover:text-pup-maroon transition-colors relative">
-                    <i data-lucide="users" class="h-6 w-6 mb-1"></i>
-                    <span class="text-[10px] font-bold">Patients</span>
-                </a>
-                <a href="admin_appointments.php" class="snap-center flex-1 min-w-[70px] flex flex-col items-center justify-center p-3 text-gray-400 hover:text-pup-maroon transition-colors relative">
-                    <i data-lucide="calendar" class="h-6 w-6 mb-1"></i>
-                    <span class="text-[10px] font-bold">Appts</span>
-                </a>
-                <a href="admin_inquiries.php" class="snap-center flex-1 min-w-[70px] flex flex-col items-center justify-center p-3 text-gray-400 hover:text-pup-maroon transition-colors relative">
-                    <i data-lucide="message-square" class="h-6 w-6 mb-1"></i>
-                    <span class="text-[10px] font-bold">Chat</span>
-                </a>
-                <a href="admin_profile.php" class="snap-center flex-1 min-w-[70px] flex flex-col items-center justify-center p-3 text-gray-400 hover:text-pup-maroon transition-colors relative">
-                    <i data-lucide="user-cog" class="h-6 w-6 mb-1"></i>
-                    <span class="text-[10px] font-bold">Profile</span>
-                </a>
-                
-                <a href="super_admin_users.php" class="snap-center flex-1 min-w-[70px] flex flex-col items-center justify-center p-3 text-pup-maroon transition-colors relative">
-                    <i data-lucide="shield-alert" class="h-6 w-6 mb-1"></i>
-                    <span class="text-[10px] font-bold">Admins</span>
-                    <span class="absolute top-0 w-8 h-1 bg-pup-maroon rounded-b-md"></span>
-                </a>
-            </div>
-        </nav>
-
     </main>
 
     <?php if($is_super_admin): ?>
-    <!-- Add Admin Modal (Only renders for Super Admin) -->
     <div id="addAdminModal" class="fixed inset-0 z-50 hidden bg-gray-900 bg-opacity-75 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
             <form action="super_admin_users.php" method="POST">
@@ -268,8 +208,9 @@ if (!empty($user['profile_pic']) && $user['profile_pic'] !== 'default.png') {
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                        <select name="role" required class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm">
+                        <select name="role" required class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm bg-white">
                             <option value="admin">Clinic Admin</option>
+                            <option value="dentist">Dental Faculty</option>
                             <option value="super_admin">Super Admin</option>
                         </select>
                     </div>

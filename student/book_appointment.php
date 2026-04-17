@@ -10,6 +10,13 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'student') {
 $user_id = $_SESSION['user_id'];
 $success_msg = '';
 
+// Auto-add dental procedure column to database if it doesn't exist
+try {
+    $pdo->exec("ALTER TABLE appointments ADD COLUMN dental_procedure VARCHAR(100) DEFAULT NULL");
+} catch (PDOException $e) {
+    // Column already exists
+}
+
 $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
 $stmt->execute([$user_id]);
 $user = $stmt->fetch();
@@ -28,6 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['service'], $_POST['app
     $service = $_POST['service'];
     $date = $_POST['appointment_date'];
     $time = $_POST['appointment_time'];
+    $dental_procedure = $_POST['dental_procedure'] ?? null;
     
     // Convert service values to readable format
     $service_names = [
@@ -38,16 +46,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['service'], $_POST['app
     ];
     $service_type = $service_names[$service] ?? 'General Consultation';
 
-    $stmt = $pdo->prepare("INSERT INTO appointments (patient_id, service_type, appointment_date, appointment_time, status) VALUES (?, ?, ?, ?, 'Pending')");
-    $stmt->execute([$user_id, $service_type, $date, $time]);
+    // Clear dental procedure if they chose a different service
+    if ($service !== 'dental') {
+        $dental_procedure = null;
+    }
+
+    $stmt = $pdo->prepare("INSERT INTO appointments (patient_id, service_type, dental_procedure, appointment_date, appointment_time, status) VALUES (?, ?, ?, ?, ?, 'Pending')");
+    $stmt->execute([$user_id, $service_type, $dental_procedure, $date, $time]);
     
+    // Formatting text for notifications
+    $proc_text = $dental_procedure ? " (" . $dental_procedure . ")" : "";
+
     // Notify admins about the new appointment
-    $notif_msg = "[Appointment] " . $user['full_name'] . " booked an appointment for " . $service_type . " on " . date('M d, Y', strtotime($date)) . " at " . date('h:i A', strtotime($time)) . ".";
+    $notif_msg = "[Appointment] " . $user['full_name'] . " booked an appointment for " . $service_type . $proc_text . " on " . date('M d, Y', strtotime($date)) . " at " . date('h:i A', strtotime($time)) . ".";
     $notifStmt = $pdo->prepare("INSERT INTO notifications (user_id, message) VALUES (NULL, ?)");
     $notifStmt->execute([$notif_msg]);
     
     // Notify student that it is pending
-    $stu_notif = "[Appointment] Your appointment request for " . $service_type . " on " . date('M d, Y', strtotime($date)) . " has been successfully submitted and is currently Pending.";
+    $stu_notif = "[Appointment] Your appointment request for " . $service_type . $proc_text . " on " . date('M d, Y', strtotime($date)) . " has been successfully submitted and is currently Pending.";
     $pdo->prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)")->execute([$user_id, $stu_notif]);
     
     $success_msg = "Your appointment has been booked successfully!";
@@ -148,53 +164,85 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['service'], $_POST['app
                     <form action="book_appointment.php" method="POST">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">1. Select Service</h3>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-                            <label class="relative cursor-pointer">
+                            
+                            <!-- General Consultation -->
+                            <label class="relative cursor-pointer group">
                                 <input type="radio" name="service" value="general" class="peer sr-only" checked>
-                                <div class="p-5 border-2 border-gray-200 rounded-xl hover:bg-gray-50 transition-colors h-full">
+                                <div class="p-5 border-2 border-gray-200 rounded-xl hover:border-gray-300 hover:bg-gray-50 transition-all duration-300 h-full peer-checked:border-pup-maroon peer-checked:bg-red-50/30 peer-checked:shadow-[0_0_15px_rgba(136,0,0,0.1)] peer-checked:[&_.radio-indicator]:border-pup-maroon peer-checked:[&_.radio-indicator>div]:scale-100 peer-checked:[&_.radio-indicator>div]:bg-pup-maroon peer-checked:[&_h3]:text-pup-maroon">
                                     <div class="flex justify-between items-start mb-2">
                                         <div class="bg-red-100 p-2 rounded-lg text-pup-maroon"><i data-lucide="stethoscope" class="h-6 w-6"></i></div>
-                                        <div class="radio-indicator w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center transition-colors"><div class="w-2.5 h-2.5 rounded-full bg-white"></div></div>
+                                        <div class="radio-indicator w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center transition-colors"><div class="w-2.5 h-2.5 rounded-full bg-transparent transform scale-0 transition-all duration-200"></div></div>
                                     </div>
-                                    <h3 class="font-bold text-gray-900 text-lg">General Consultation</h3>
+                                    <h3 class="font-bold text-gray-900 text-lg transition-colors">General Consultation</h3>
                                     <p class="text-sm text-gray-500 mt-1">Basic check-ups, flu, fever, or non-emergency symptoms.</p>
                                 </div>
                             </label>
 
-                            <label class="relative cursor-pointer">
+                            <!-- Dental Services -->
+                            <label class="relative cursor-pointer group">
                                 <input type="radio" name="service" value="dental" class="peer sr-only">
-                                <div class="p-5 border-2 border-gray-200 rounded-xl hover:bg-gray-50 transition-colors h-full">
+                                <div class="p-5 border-2 border-gray-200 rounded-xl hover:border-gray-300 hover:bg-gray-50 transition-all duration-300 h-full peer-checked:border-pup-maroon peer-checked:bg-red-50/30 peer-checked:shadow-[0_0_15px_rgba(136,0,0,0.1)] peer-checked:[&_.radio-indicator]:border-pup-maroon peer-checked:[&_.radio-indicator>div]:scale-100 peer-checked:[&_.radio-indicator>div]:bg-pup-maroon peer-checked:[&_h3]:text-pup-maroon">
                                     <div class="flex justify-between items-start mb-2">
                                         <div class="bg-blue-100 p-2 rounded-lg text-blue-600"><i data-lucide="smile" class="h-6 w-6"></i></div>
-                                        <div class="radio-indicator w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center transition-colors"><div class="w-2.5 h-2.5 rounded-full bg-white"></div></div>
+                                        <div class="radio-indicator w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center transition-colors"><div class="w-2.5 h-2.5 rounded-full bg-transparent transform scale-0 transition-all duration-200"></div></div>
                                     </div>
-                                    <h3 class="font-bold text-gray-900 text-lg">Dental Services</h3>
+                                    <h3 class="font-bold text-gray-900 text-lg transition-colors">Dental Services</h3>
                                     <p class="text-sm text-gray-500 mt-1">Tooth extraction, cleaning, and oral health checkups.</p>
                                 </div>
                             </label>
 
-                            <label class="relative cursor-pointer">
+                            <!-- Medical Clearance -->
+                            <label class="relative cursor-pointer group">
                                 <input type="radio" name="service" value="clearance" class="peer sr-only">
-                                <div class="p-5 border-2 border-gray-200 rounded-xl hover:bg-gray-50 transition-colors h-full">
+                                <div class="p-5 border-2 border-gray-200 rounded-xl hover:border-gray-300 hover:bg-gray-50 transition-all duration-300 h-full peer-checked:border-pup-maroon peer-checked:bg-red-50/30 peer-checked:shadow-[0_0_15px_rgba(136,0,0,0.1)] peer-checked:[&_.radio-indicator]:border-pup-maroon peer-checked:[&_.radio-indicator>div]:scale-100 peer-checked:[&_.radio-indicator>div]:bg-pup-maroon peer-checked:[&_h3]:text-pup-maroon">
                                     <div class="flex justify-between items-start mb-2">
                                         <div class="bg-yellow-100 p-2 rounded-lg text-yellow-700"><i data-lucide="file-check-2" class="h-6 w-6"></i></div>
-                                        <div class="radio-indicator w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center transition-colors"><div class="w-2.5 h-2.5 rounded-full bg-white"></div></div>
+                                        <div class="radio-indicator w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center transition-colors"><div class="w-2.5 h-2.5 rounded-full bg-transparent transform scale-0 transition-all duration-200"></div></div>
                                     </div>
-                                    <h3 class="font-bold text-gray-900 text-lg">Medical Clearance</h3>
+                                    <h3 class="font-bold text-gray-900 text-lg transition-colors">Medical Clearance</h3>
                                     <p class="text-sm text-gray-500 mt-1">For OJT, enrollment, or sports participation requirements.</p>
                                 </div>
                             </label>
 
-                            <label class="relative cursor-pointer">
+                            <!-- Mental Health Info -->
+                            <label class="relative cursor-pointer group">
                                 <input type="radio" name="service" value="counseling" class="peer sr-only">
-                                <div class="p-5 border-2 border-gray-200 rounded-xl hover:bg-gray-50 transition-colors h-full">
+                                <div class="p-5 border-2 border-gray-200 rounded-xl hover:border-gray-300 hover:bg-gray-50 transition-all duration-300 h-full peer-checked:border-pup-maroon peer-checked:bg-red-50/30 peer-checked:shadow-[0_0_15px_rgba(136,0,0,0.1)] peer-checked:[&_.radio-indicator]:border-pup-maroon peer-checked:[&_.radio-indicator>div]:scale-100 peer-checked:[&_.radio-indicator>div]:bg-pup-maroon peer-checked:[&_h3]:text-pup-maroon">
                                     <div class="flex justify-between items-start mb-2">
                                         <div class="bg-green-100 p-2 rounded-lg text-green-600"><i data-lucide="brain-circuit" class="h-6 w-6"></i></div>
-                                        <div class="radio-indicator w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center transition-colors"><div class="w-2.5 h-2.5 rounded-full bg-white"></div></div>
+                                        <div class="radio-indicator w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center transition-colors"><div class="w-2.5 h-2.5 rounded-full bg-transparent transform scale-0 transition-all duration-200"></div></div>
                                     </div>
-                                    <h3 class="font-bold text-gray-900 text-lg">Mental Health Info</h3>
+                                    <h3 class="font-bold text-gray-900 text-lg transition-colors">Mental Health Info</h3>
                                     <p class="text-sm text-gray-500 mt-1">Initial assessment or inquiry directing to guidance counselors.</p>
                                 </div>
                             </label>
+                        </div>
+
+                        <!-- DYNAMIC DENTAL PROCEDURE SELECTION -->
+                        <div id="dentalProcedureSection" class="hidden mb-8 bg-blue-50 border border-blue-200 rounded-xl p-6 shadow-sm relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-1.5 h-full bg-blue-500"></div>
+                            <label class="block text-base font-bold text-blue-900 mb-2"><i data-lucide="stethoscope" class="h-5 w-5 inline mr-1 -mt-1"></i> Select Dental Procedure <span class="text-red-500">*</span></label>
+                            <p class="text-sm text-blue-700 mb-4">Please choose the specific dental service you need.</p>
+                            <select name="dental_procedure" id="dental_procedure_select" class="block w-full px-4 py-3 border border-blue-300 rounded-xl focus:ring-blue-600 focus:border-blue-600 sm:text-sm bg-white font-medium text-gray-800 transition-colors cursor-pointer shadow-sm">
+                                <option value="" disabled selected>Choose a procedure...</option>
+                                <option value="Pasta (Filling)">Pasta (Filling)</option>
+                                <option value="Bunot (Extraction)">Bunot (Extraction)</option>
+                                <option value="Cleaning (Prophylaxis)">Cleaning (Prophylaxis)</option>
+                                <option value="General Checkup">General Checkup</option>
+                            </select>
+                        </div>
+
+                        <!-- DYNAMIC DENTAL WARNING MESSAGE -->
+                        <div id="dentalWarning" class="hidden mb-8 bg-gray-50 border border-gray-200 rounded-xl p-5 flex gap-4 items-start shadow-sm transition-all">
+                            <div class="bg-gray-200 text-gray-600 p-2 rounded-full flex-shrink-0"><i data-lucide="info" class="h-5 w-5"></i></div>
+                            <div>
+                                <h4 class="font-bold text-gray-900 text-sm mb-1">Dental Appointment Requirements</h4>
+                                <ul class="text-sm text-gray-700 space-y-1 list-disc list-inside ml-1">
+                                    <li>The dentist will review and approve your request before you proceed.</li>
+                                    <li>All services performed by student practitioners are completely <b>free of charge</b>.</li>
+                                    <li>You <b>must</b> bring your cellphone to present your confirmed online request upon arrival.</li>
+                                </ul>
+                            </div>
                         </div>
 
                         <h3 class="text-lg font-semibold text-gray-900 mb-4 pt-4 border-t border-gray-100">2. Select Date & Time</h3>
@@ -237,7 +285,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['service'], $_POST['app
                     </div>
                 </div>
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 flex flex-col sm:flex-row-reverse gap-2">
-                    <a href="../auth/logout.php" class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:w-auto sm:text-sm transition-colors text-center">Sign Out</a>
+                    <a href="../logout.php" class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:w-auto sm:text-sm transition-colors text-center">Sign Out</a>
                     <button type="button" onclick="closeLogoutModal()" class="w-full inline-flex justify-center rounded-xl border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:w-auto sm:text-sm transition-colors">Cancel</button>
                 </div>
             </div>
@@ -248,6 +296,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['service'], $_POST['app
         lucide.createIcons();
         function openLogoutModal() { document.getElementById('logoutModalOverlay').classList.replace('opacity-0', 'opacity-100'); document.getElementById('logoutModalPanel').classList.replace('opacity-0', 'opacity-100'); document.getElementById('logoutModalPanel').classList.replace('translate-y-4', 'translate-y-0'); document.getElementById('logoutModalPanel').classList.replace('sm:scale-95', 'sm:scale-100'); document.getElementById('logoutModal').classList.remove('hidden'); }
         function closeLogoutModal() { document.getElementById('logoutModalOverlay').classList.replace('opacity-100', 'opacity-0'); document.getElementById('logoutModalPanel').classList.replace('opacity-100', 'opacity-0'); document.getElementById('logoutModalPanel').classList.replace('translate-y-0', 'translate-y-4'); document.getElementById('logoutModalPanel').classList.replace('sm:scale-100', 'sm:scale-95'); setTimeout(() => document.getElementById('logoutModal').classList.add('hidden'), 300); }
+
+        // Dynamic Dental Workflow Logic
+        const serviceRadios = document.querySelectorAll('input[name="service"]');
+        const dentalWarning = document.getElementById('dentalWarning');
+        const dentalProcedureSection = document.getElementById('dentalProcedureSection');
+        const dentalProcedureSelect = document.getElementById('dental_procedure_select');
+
+        serviceRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (e.target.value === 'dental') {
+                    // Show dental specific inputs and set requirement
+                    dentalWarning.classList.remove('hidden');
+                    dentalProcedureSection.classList.remove('hidden');
+                    dentalProcedureSelect.required = true;
+                } else {
+                    // Hide dental inputs, clear and un-require
+                    dentalWarning.classList.add('hidden');
+                    dentalProcedureSection.classList.add('hidden');
+                    dentalProcedureSelect.required = false;
+                    dentalProcedureSelect.value = '';
+                }
+            });
+        });
     </script>
 </body>
 </html>
