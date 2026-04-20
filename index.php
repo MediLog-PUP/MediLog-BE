@@ -130,7 +130,7 @@
                     </a>
                     
                     <a href="auth/facultylogin.php" class="group flex items-center justify-center gap-3 py-4 px-8 border border-gray-200/80 bg-white/60 backdrop-blur-md rounded-2xl shadow-sm text-base font-bold text-gray-700 hover:bg-white hover:border-gray-300 hover:shadow-md transition-all transform hover:-translate-y-1 w-full sm:w-auto">
-                        <i data-lucide="shield-check" class="h-5 w-5 text-pup-maroon group-hover:scale-110 transition-transform"></i> Clinic Admin
+                        <i data-lucide="shield-check" class="h-5 w-5 text-pup-maroon group-hover:scale-110 transition-transform"></i> Faculty Portal
                     </a>
                 </div>
             </div>
@@ -160,8 +160,8 @@
                             <div class="flex items-center gap-3">
                                 <i data-lucide="heart-pulse" class="h-8 w-8 text-pup-maroon animate-pulse-slow"></i>
                                 <div>
-                                    <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">System Status</p>
-                                    <p class="text-lg font-extrabold text-gray-900">All Systems Nominal</p>
+                                    <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Status</p>
+                                    <p class="text-lg font-extrabold text-gray-900">Let's get you in check </p>
                                 </div>
                             </div>
                         </div>

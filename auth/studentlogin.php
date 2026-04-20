@@ -1,29 +1,41 @@
 <?php
 session_start();
-require '../db_connect.php';
 
-if (isset($_SESSION['user_id'])) {
-    if ($_SESSION['role'] === 'student') header("Location: ../student/student_dashboard.php");
-    else header("Location: ../admin/admin_dashboard.php");
+// --- BROWSER BACK BUTTON FIX ---
+// Prevents the browser from caching the login page.
+header("Cache-Control: no-cache, no-store, must-revalidate"); 
+header("Pragma: no-cache"); 
+header("Expires: 0"); 
+
+// If already logged in as student, instantly redirect to dashboard
+if (isset($_SESSION['user_id']) && isset($_SESSION['role']) && $_SESSION['role'] === 'student') {
+    header("Location: ../student/student_dashboard.php");
     exit();
 }
 
-$error = '';
+require '../db_connect.php'; 
+$error_msg = '';
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $id_number = trim($_POST['id_number']);
     $password = $_POST['password'];
 
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE id_number = ? AND role = 'student'");
-    $stmt->execute([$id_number]);
-    $user = $stmt->fetch();
+    if (!empty($id_number) && !empty($password)) {
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE id_number = ? AND role = 'student' LIMIT 1");
+        $stmt->execute([$id_number]);
+        $user = $stmt->fetch();
 
-    if ($user && password_verify($password, $user['password'])) {
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['role'] = $user['role'];
-        header("Location: ../student/student_dashboard.php");
-        exit();
+        // Assuming you use password_hash() for registration. If using plain text for testing, change to $password === $user['password']
+        if ($user && password_verify($password, $user['password'])) {
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['role'] = $user['role'];
+            header("Location: ../student/student_dashboard.php");
+            exit();
+        } else {
+            $error_msg = "Invalid Student ID or Password.";
+        }
     } else {
-        $error = "Invalid Student ID or Password.";
+        $error_msg = "Please fill in all fields.";
     }
 }
 ?>
@@ -37,70 +49,137 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
-        tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { pup: { maroon: '#880000', maroonDark: '#660000', gold: '#F1B500', goldLight: '#FDE68A' } } } } }
+        tailwind.config = { 
+            theme: { 
+                extend: { 
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }, 
+                    colors: { pup: { maroon: '#880000', maroonDark: '#660000', gold: '#F1B500' } },
+                    animation: {
+                        'blob': 'blob 7s infinite',
+                        'gradient': 'gradient 15s ease infinite',
+                    },
+                    keyframes: {
+                        blob: {
+                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                        },
+                        gradient: {
+                            '0%': { backgroundPosition: '0% 50%' },
+                            '50%': { backgroundPosition: '100% 50%' },
+                            '100%': { backgroundPosition: '0% 50%' },
+                        }
+                    }
+                } 
+            } 
+        }
     </script>
+    <style>
+        .pattern-move {
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 24px 24px;
+            animation: patternMove 20s linear infinite;
+        }
+        @keyframes patternMove {
+            0% { background-position: 0 0; }
+            100% { background-position: 48px 48px; }
+        }
+    </style>
 </head>
-<body class="font-sans antialiased text-gray-800 bg-gray-50 flex items-center justify-center min-h-screen relative overflow-hidden bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
+<body class="font-sans antialiased bg-white text-gray-900 min-h-screen flex">
 
-    <!-- Global Loader -->
-    <?php include '../global_loader.php'; ?>
+    <!-- Left Side: Branding / Graphic with Moving Blobs (Hidden on mobile) -->
+    <div class="hidden lg:flex w-1/2 bg-gradient-to-br from-pup-maroon via-red-900 to-red-950 animate-gradient bg-[length:400%_400%] p-12 flex-col justify-between relative overflow-hidden text-white">
+        
+        <!-- Animated Background Blobs -->
+        <div class="absolute top-0 right-0 -mt-20 -mr-20 w-96 h-96 bg-white opacity-10 rounded-full blur-3xl animate-blob"></div>
+        <div class="absolute bottom-0 left-0 -mb-20 -ml-20 w-80 h-80 bg-pup-gold opacity-20 rounded-full blur-3xl animate-blob" style="animation-delay: 2s;"></div>
+        <div class="absolute top-1/2 left-1/4 transform -translate-y-1/2 w-72 h-72 bg-red-400 opacity-20 rounded-full blur-3xl animate-blob" style="animation-delay: 4s;"></div>
 
-    <div class="absolute top-0 w-full h-2 bg-pup-maroon"></div>
+        <div class="relative z-10 flex items-center gap-3">
+            <div class="bg-white/20 p-2.5 rounded-xl backdrop-blur-sm border border-white/30"><i data-lucide="clipboard-heart" class="h-8 w-8 text-pup-gold"></i></div>
+            <span class="font-bold text-2xl tracking-tight">MediLog Clinic</span>
+        </div>
 
-    <div class="w-full max-w-md p-8 sm:p-10 bg-white rounded-3xl shadow-xl border border-gray-100 z-10 mx-4">
-        <div class="flex justify-center mb-6">
-            <div class="bg-pup-maroon p-4 rounded-2xl shadow-lg">
-                <i data-lucide="clipboard-heart" class="h-10 w-10 text-pup-gold"></i>
+        <div class="relative z-10 max-w-md">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-6 leading-tight">Student Health <br>Portal</h1>
+            <p class="text-red-100/80 text-lg mb-8 leading-relaxed">Book appointments, request medical clearances, and securely access your health records anytime, anywhere.</p>
+            <div class="flex items-center gap-4 text-sm font-medium text-white/70">
+                <div class="flex items-center gap-2"><i data-lucide="check-circle-2" class="h-4 w-4 text-pup-gold"></i> Secure Access</div>
+                <div class="flex items-center gap-2"><i data-lucide="check-circle-2" class="h-4 w-4 text-pup-gold"></i> 24/7 Availability</div>
             </div>
         </div>
+
+        <div class="relative z-10 text-sm text-red-200/60 font-medium">
+            &copy; <?= date('Y') ?> MediLog System. All rights reserved.
+        </div>
+    </div>
+
+    <!-- Right Side: Login Form with Moving Pattern -->
+    <div class="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-16 md:px-24 py-12 relative bg-gray-50/80 pattern-move">
         
-        <h2 class="text-2xl font-extrabold text-center text-gray-900 mb-2">Student Portal</h2>
-        <p class="text-center text-gray-500 text-sm mb-8">Sign in to manage your health records</p>
+        <!-- Subtle gradient overlay to soften the pattern -->
+        <div class="absolute inset-0 bg-gradient-to-b from-white via-transparent to-gray-50/90 pointer-events-none"></div>
 
-        <?php if($error): ?>
-            <div class="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-semibold mb-6 flex items-center gap-2 border border-red-100">
-                <i data-lucide="alert-circle" class="h-5 w-5"></i> <?= htmlspecialchars($error) ?>
+        <a href="../index.php" class="absolute top-8 left-8 sm:left-12 inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-pup-maroon transition-colors group z-10">
+            <div class="bg-white p-1.5 rounded-lg border border-gray-200 shadow-sm group-hover:border-pup-maroon group-hover:bg-red-50 transition-all">
+                <i data-lucide="arrow-left" class="h-4 w-4 transition-transform group-hover:-translate-x-0.5"></i>
             </div>
-        <?php endif; ?>
+            Back to Home
+        </a>
 
-        <form action="studentlogin.php" method="POST" class="space-y-5">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">Student ID Number</label>
-                <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
-                        <i data-lucide="user" class="h-5 w-5"></i>
+        <div class="max-w-md w-full mx-auto mt-12 lg:mt-0 relative z-10 bg-white/60 backdrop-blur-md p-8 sm:p-10 rounded-3xl shadow-xl border border-white/50">
+            <div class="lg:hidden flex items-center gap-3 mb-8">
+                <div class="bg-pup-maroon p-2.5 rounded-xl shadow-lg"><i data-lucide="clipboard-heart" class="h-6 w-6 text-pup-gold"></i></div>
+                <span class="font-bold text-2xl tracking-tight text-gray-900">MediLog</span>
+            </div>
+
+            <div class="mb-8">
+                <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">Welcome Back! 👋</h2>
+                <p class="text-gray-500 mt-2 font-medium">Please sign in to your student account.</p>
+            </div>
+
+            <?php if($error_msg): ?>
+                <div class="bg-red-50 text-red-700 p-4 rounded-xl text-sm font-bold border border-red-200 flex items-center gap-3 mb-6 animate-pulse">
+                    <i data-lucide="alert-circle" class="h-5 w-5 flex-shrink-0"></i> <?= htmlspecialchars($error_msg) ?>
+                </div>
+            <?php endif; ?>
+
+            <form action="studentlogin.php" method="POST" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Student ID Number</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i data-lucide="user" class="h-5 w-5 text-gray-400"></i>
+                        </div>
+                        <input type="text" name="id_number" required placeholder="e.g. 2021-00001-TG-0" class="block w-full pl-11 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl text-sm shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pup-maroon focus:border-transparent transition-all">
                     </div>
-                    <input type="text" name="id_number" required placeholder="e.g. 2021-00000-MN-0" class="block w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm bg-gray-50 focus:bg-white transition-colors">
                 </div>
-            </div>
-            
-            <div>
-                <div class="flex items-center justify-between mb-1.5">
-                    <label class="block text-sm font-medium text-gray-700">Password</label>
-                    <a href="forgot_password.php" class="text-xs font-semibold text-pup-maroon hover:underline">Forgot password?</a>
-                </div>
-                <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
-                        <i data-lucide="lock" class="h-5 w-5"></i>
+
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-sm font-bold text-gray-700">Password</label>
+                        <a href="forgot_password.php" class="text-sm font-bold text-pup-maroon hover:text-pup-maroonDark transition-colors">Forgot Password?</a>
                     </div>
-                    <input type="password" name="password" required placeholder="••••••••" class="block w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm bg-gray-50 focus:bg-white transition-colors">
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i data-lucide="lock" class="h-5 w-5 text-gray-400"></i>
+                        </div>
+                        <input type="password" name="password" required placeholder="••••••••" class="block w-full pl-11 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl text-sm shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pup-maroon focus:border-transparent transition-all">
+                    </div>
                 </div>
-            </div>
 
-            <button type="submit" class="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-pup-maroon hover:bg-pup-maroonDark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pup-maroon transition-all transform hover:-translate-y-0.5 mt-2">
-                Sign In
-            </button>
-        </form>
+                <div class="pt-2">
+                    <button type="submit" class="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-md text-sm font-bold text-white bg-pup-maroon hover:bg-pup-maroonDark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pup-maroon transition-all transform hover:-translate-y-0.5">
+                        Sign In to Portal
+                    </button>
+                </div>
+            </form>
 
-        <div class="mt-8 text-center space-y-3">
-            <p class="text-sm text-gray-500">
-                New student? <a href="register.php" class="font-bold text-pup-maroon hover:underline">Create an account</a>
+            <p class="mt-8 text-center text-sm text-gray-600 font-medium">
+                Don't have an account? <a href="studentregister.php" class="font-bold text-pup-maroon hover:text-pup-maroonDark transition-colors">Register here</a>
             </p>
-            <div class="border-t border-gray-100 pt-4">
-                <a href="facultylogin.php" class="text-sm font-semibold text-gray-600 hover:text-gray-900 flex items-center justify-center gap-2 transition-colors">
-                    <i data-lucide="shield-half" class="h-4 w-4"></i> Clinic Admin Login
-                </a>
-            </div>
         </div>
     </div>
 

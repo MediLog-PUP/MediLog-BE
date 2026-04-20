@@ -75,7 +75,7 @@ $upcoming_patients = $scheduledStmt->fetchAll(PDO::FETCH_ASSOC);
             <a href="dental_procedures.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="stethoscope" class="h-5 w-5"></i> Procedures & Eval</a>
         </nav>
         <div class="p-4 border-t border-gray-800">
-            <a href="../logout.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-red-900/50 hover:text-red-400 rounded-xl font-medium transition-colors w-full"><i data-lucide="log-out" class="h-5 w-5"></i> Sign Out</a>
+            <a href="../auth/logout.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-red-900/50 hover:text-red-400 rounded-xl font-medium transition-colors w-full"><i data-lucide="log-out" class="h-5 w-5"></i> Sign Out</a>
         </div>
     </aside>
 

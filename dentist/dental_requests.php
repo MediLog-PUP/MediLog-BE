@@ -57,7 +57,7 @@ $requests = $pdo->query("
             <a href="dental_requests.php" class="flex items-center gap-3 px-4 py-3 bg-blue-600 text-white rounded-xl shadow-sm"><i data-lucide="clipboard-list"></i> Pending Requests</a>
             <a href="dental_procedures.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 rounded-xl"><i data-lucide="stethoscope"></i> Procedures & Eval</a>
         </nav>
-        <div class="p-4 border-t border-gray-800"><a href="../logout.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-red-400 w-full"><i data-lucide="log-out"></i> Sign Out</a></div>
+        <div class="p-4 border-t border-gray-800"><a href="../auth/logout.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-red-400 w-full"><i data-lucide="log-out"></i> Sign Out</a></div>
     </aside>
 
     <main class="flex-1 flex flex-col h-full overflow-hidden">

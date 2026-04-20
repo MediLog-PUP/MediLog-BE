@@ -55,7 +55,7 @@ $chat_history = $msgStmt->fetchAll(PDO::FETCH_ASSOC);
             <a href="student_dashboard.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 rounded-xl"><i data-lucide="layout-dashboard"></i> Dashboard</a>
             <a href="messages.php" class="flex items-center gap-3 px-4 py-3 bg-pup-maroon text-white rounded-xl shadow-sm"><i data-lucide="message-square"></i> Messages</a>
         </nav>
-        <div class="p-4"><a href="../logout.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-red-400 w-full"><i data-lucide="log-out"></i> Sign Out</a></div>
+        <div class="p-4"><a href="../auth/logout.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-red-400 w-full"><i data-lucide="log-out"></i> Sign Out</a></div>
     </aside>
 
     <main class="flex-1 flex flex-col h-full bg-white max-w-4xl mx-auto border-x border-gray-200 shadow-sm">
