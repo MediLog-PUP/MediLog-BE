@@ -7,7 +7,6 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'facu
     exit();
 }
 
-
 $user_id = $_SESSION['user_id'];
 $success_msg = '';
 $error_msg = '';
@@ -363,7 +362,7 @@ try {
                 <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <div class="sm:flex sm:items-start">
                         <div id="alertModalIconContainer" class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10">
-                            <!-- Icon gets injected here via JS -->
+                            <!-- Icon gets injected here via JS to safely prevent crashing -->
                         </div>
                         <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
                             <h3 class="text-lg leading-6 font-bold text-gray-900" id="alertModalTitle">Alert</h3>
@@ -519,7 +518,7 @@ try {
                     </div>
                 </div>
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 flex flex-col sm:flex-row-reverse gap-2">
-                    <a href="../auth/logout.php" class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:w-auto sm:text-sm transition-colors text-center">Sign Out</a>
+                    <a href="../logout.php" class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:w-auto sm:text-sm transition-colors text-center">Sign Out</a>
                     <button type="button" onclick="closeLogoutModal()" class="w-full inline-flex justify-center rounded-xl border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:w-auto sm:text-sm transition-colors">Cancel</button>
                 </div>
             </div>
@@ -542,19 +541,18 @@ try {
             .then(res => res.json())
             .then(data => {
                 if (data.error) {
-                    // Show Error Modal
-                    document.getElementById('alertModalIcon').outerHTML = '<i data-lucide="alert-circle" class="h-6 w-6 text-red-600" id="alertModalIcon"></i>';
+                    // Safe innerHTML replacement to prevent crashing when the icon doesn't exist yet
+                    document.getElementById('alertModalIconContainer').innerHTML = '<i data-lucide="alert-circle" class="h-6 w-6 text-red-600" id="alertModalIcon"></i>';
                     document.getElementById('alertModalIconContainer').className = 'mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10';
                     document.getElementById('alertModalTitle').innerText = 'Action Failed';
                     document.getElementById('alertModalMessage').innerText = data.error;
                     document.getElementById('alertModalCloseBtn').className = 'w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-bold text-white hover:bg-red-700 sm:w-auto sm:text-sm transition-colors text-center';
                     openAlertModal();
                 } else if (data.success) {
-                    // Update table body and show Success Modal
                     document.getElementById('inventory-tbody').innerHTML = data.html;
                     if(form.id === 'add-medicine-form') form.reset();
                     
-                    document.getElementById('alertModalIcon').outerHTML = '<i data-lucide="check-circle-2" class="h-6 w-6 text-green-600" id="alertModalIcon"></i>';
+                    document.getElementById('alertModalIconContainer').innerHTML = '<i data-lucide="check-circle-2" class="h-6 w-6 text-green-600" id="alertModalIcon"></i>';
                     document.getElementById('alertModalIconContainer').className = 'mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-green-100 sm:mx-0 sm:h-10 sm:w-10';
                     document.getElementById('alertModalTitle').innerText = 'Success';
                     document.getElementById('alertModalMessage').innerText = data.success;
@@ -562,10 +560,9 @@ try {
                     openAlertModal();
                 }
 
-                // Re-initialize Lucide Icons for dynamically added elements
+                // Re-initialize Lucide Icons for dynamically added elements AND the modal icons
                 lucide.createIcons();
                 
-                // Close Item Modals
                 closeAddMedicineModal();
                 closeEditMedModal();
                 closeDeleteMedModal();

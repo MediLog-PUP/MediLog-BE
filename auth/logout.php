@@ -1,5 +1,12 @@
 <?php
+// Suppress any background PHP notices/warnings from flashing on the screen
+error_reporting(0); 
+
 session_start();
+
+// Rigorously wipe all session data before destroying
+$_SESSION = array();
+session_unset();
 session_destroy();
 ?>
 <!DOCTYPE html>
@@ -16,23 +23,23 @@ session_destroy();
 </head>
 <body class="bg-gray-50 flex h-screen items-center justify-center overflow-hidden">
     
-    <!-- We inject the global loader directly here to show it immediately -->
-    <?php include '../global_loader.php'; ?>
+    <!-- We inject the global skeleton loader directly here to show it immediately -->
+    <!-- Added '@' to suppress any include warnings just in case -->
+    <?php @include 'global_loader.php'; ?>
 
     <script>
-        // Force the loader to be visible instantly
+        // Force the skeleton loader to be visible instantly
         const loader = document.getElementById('pageLoader');
         if (loader) {
             loader.classList.remove('hidden-loader');
             loader.style.opacity = '1';
             loader.style.visibility = 'visible';
-            loader.querySelector('p').innerText = "SIGNING OUT...";
         }
 
-        // Redirect smoothly back to the student login page after 1.2 seconds
+        // Redirect smoothly back to the main landing page
         setTimeout(() => {
             window.location.href = '../index.php';
-        }, 1200);
+        }, 800);
     </script>
 </body>
 </html>

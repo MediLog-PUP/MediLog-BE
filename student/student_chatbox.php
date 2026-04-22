@@ -12,21 +12,45 @@ if (!isset($pdo)) {
 // --- AJAX ENDPOINTS ---
 // Handle AJAX Sending
 if (isset($_POST['ajax_send_msg'])) {
-    $msg = trim($_POST['chat_message']);
-    if (!empty($msg)) {
-        // Send to shared inbox (receiver_id = 0)
-        $stmt = $pdo->prepare("INSERT INTO messages (sender_id, receiver_id, message) VALUES (?, 0, ?)");
-        $stmt->execute([$user_id, $msg]);
-        
-        // Notify the Admin
-        $stuNameStmt = $pdo->prepare("SELECT full_name FROM users WHERE id = ?");
-        $stuNameStmt->execute([$user_id]);
-        $stu_name = $stuNameStmt->fetchColumn();
+    ob_clean(); // Ensure a clean JSON response
+    header('Content-Type: application/json');
 
-        $admin_notif_msg = "[Message] Student " . $stu_name . " sent a new message inquiry.";
-        $pdo->prepare("INSERT INTO notifications (user_id, message) VALUES (NULL, ?)")->execute([$admin_notif_msg]);
+    try {
+        $msg = trim($_POST['chat_message']);
+        if (!empty($msg)) {
+            // FIX 1: Find the admin who last messaged this student to keep the thread alive
+            $stmtAdmin = $pdo->prepare("SELECT sender_id FROM messages WHERE receiver_id = ? ORDER BY created_at DESC LIMIT 1");
+            $stmtAdmin->execute([$user_id]);
+            $admin_id = $stmtAdmin->fetchColumn();
+
+            // FIX 2: If no previous chat, fallback to ANY active staff member safely (prevents inserting '0')
+            if (!$admin_id) {
+                $admin_id = $pdo->query("SELECT id FROM users WHERE role != 'student' ORDER BY id ASC LIMIT 1")->fetchColumn();
+            }
+
+            // Only attempt to insert if a valid admin ID was found
+            if ($admin_id) {
+                $stmt = $pdo->prepare("INSERT INTO messages (sender_id, receiver_id, message) VALUES (?, ?, ?)");
+                $stmt->execute([$user_id, $admin_id, $msg]);
+                
+                // Notify the Admin safely
+                try {
+                    $stuNameStmt = $pdo->prepare("SELECT full_name FROM users WHERE id = ?");
+                    $stuNameStmt->execute([$user_id]);
+                    $stu_name = $stuNameStmt->fetchColumn();
+
+                    $admin_notif_msg = "[Message] Student " . $stu_name . " sent a new message inquiry via Chatbox.";
+                    $pdo->prepare("INSERT INTO notifications (user_id, message) VALUES (NULL, ?)")->execute([$admin_notif_msg]);
+                } catch (Exception $e) {
+                    // Silently ignore notification errors so it doesn't break the chat execution
+                }
+            }
+        }
+        echo json_encode(['status' => 'ok']);
+    } catch (Exception $e) {
+        // Return errors cleanly so JS doesn't crash
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
     }
-    echo json_encode(['status' => 'ok']);
     exit();
 }
 

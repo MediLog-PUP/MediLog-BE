@@ -9,7 +9,7 @@ header("Expires: 0");
 
 // If already logged in as staff, instantly redirect to respective dashboard
 if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
-    if ($_SESSION['role'] === 'admin' || $_SESSION['role'] === 'superadmin') {
+    if (in_array($_SESSION['role'], ['admin', 'faculty', 'super_admin'])) {
         header("Location: ../admin/admin_dashboard.php");
         exit();
     } elseif ($_SESSION['role'] === 'dentist') {
@@ -22,16 +22,17 @@ require '../db_connect.php';
 $error_msg = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $email = trim($_POST['email']);
+    // Use identifier to allow BOTH Email and ID Number
+    $identifier = trim($_POST['identifier']);
     $password = $_POST['password'];
 
-    if (!empty($email) && !empty($password)) {
-        // Staff can be admin, superadmin, or dentist
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ? AND role IN ('admin', 'superadmin', 'dentist') LIMIT 1");
-        $stmt->execute([$email]);
+    if (!empty($identifier) && !empty($password)) {
+        // FIXED ROLE TYPO: Changed 'superadmin' to 'super_admin' to match database creation
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE (email = ? OR id_number = ?) AND role IN ('admin', 'faculty', 'super_admin', 'dentist') LIMIT 1");
+        $stmt->execute([$identifier, $identifier]);
         $user = $stmt->fetch();
 
-        // Assuming password_hash() is used.
+        // Check password validity
         if ($user && password_verify($password, $user['password'])) {
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['role'] = $user['role'];
@@ -43,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
             exit();
         } else {
-            $error_msg = "Invalid Staff Email or Password.";
+            $error_msg = "Invalid Staff Credentials or Unauthorized Access.";
         }
     } else {
         $error_msg = "Please fill in all fields.";
@@ -65,7 +66,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </head>
 <body class="font-sans antialiased bg-white text-gray-900 min-h-screen flex">
 
+    <!-- Left Side: Branding / Graphic (Hidden on mobile) -->
     <div class="hidden lg:flex w-1/2 bg-brand-900 p-12 flex-col justify-between relative overflow-hidden text-white">
+        <!-- Abstract overlay shapes -->
         <div class="absolute top-0 right-0 -mt-20 -mr-20 w-96 h-96 bg-brand-blue opacity-20 rounded-full blur-3xl"></div>
         <div class="absolute bottom-0 left-0 -mb-20 -ml-20 w-80 h-80 bg-pup-maroon opacity-20 rounded-full blur-3xl"></div>
 
@@ -98,8 +101,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </div>
     </div>
 
+    <!-- Right Side: Login Form -->
     <div class="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-16 md:px-24 py-12 relative bg-gray-50/50">
         
+        <!-- BACK BUTTON -->
         <a href="../index.php" class="absolute top-8 left-8 sm:left-12 inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-brand-blue transition-colors group">
             <div class="bg-white p-1.5 rounded-lg border border-gray-200 shadow-sm group-hover:border-brand-blue group-hover:bg-blue-50 transition-all">
                 <i data-lucide="arrow-left" class="h-4 w-4 transition-transform group-hover:-translate-x-0.5"></i>
@@ -108,6 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </a>
 
         <div class="max-w-md w-full mx-auto mt-12 lg:mt-0">
+            <!-- Mobile Logo -->
             <div class="lg:hidden flex items-center gap-3 mb-8">
                 <div class="bg-brand-900 p-2.5 rounded-xl shadow-lg"><i data-lucide="shield-check" class="h-6 w-6 text-blue-400"></i></div>
                 <span class="font-bold text-2xl tracking-tight text-gray-900">MediLog Staff</span>
@@ -126,12 +132,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             <form action="facultylogin.php" method="POST" class="space-y-5">
                 <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Staff Email Address</label>
+                    <!-- Removed strict email validation. Input type changed to 'text' -->
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Staff Email or ID Number</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <i data-lucide="mail" class="h-5 w-5 text-gray-400"></i>
+                            <i data-lucide="user-check" class="h-5 w-5 text-gray-400"></i>
                         </div>
-                        <input type="email" name="email" required placeholder="admin@medilog.edu" class="block w-full pl-11 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl text-sm shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-all">
+                        <input type="text" name="identifier" required placeholder="e.g. EMP-123 or admin@medilog.edu" class="block w-full pl-11 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl text-sm shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-all">
                     </div>
                 </div>
 

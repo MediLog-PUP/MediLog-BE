@@ -1,8 +1,21 @@
 <!-- Global Loading Screen -->
+<script>
+    // SMART ACTION DETECTION: 
+    // Check immediately before the DOM renders to prevent the skeleton from flashing 
+    // if the user just submitted a form or performed an action on the same page.
+    if (sessionStorage.getItem('skipLoader') === 'true') {
+        document.documentElement.classList.add('skip-loader');
+        sessionStorage.removeItem('skipLoader');
+    }
+</script>
+
 <style>
     /* CSS for smooth fade out */
     #pageLoader { transition: opacity 0.4s ease-out, visibility 0.4s ease-out; }
-    #pageLoader.hidden-loader { opacity: 0; visibility: hidden; }
+    #pageLoader.hidden-loader { opacity: 0; visibility: hidden; pointer-events: none; }
+    
+    /* Instantly hide the loader entirely if the skip-loader flag is active */
+    html.skip-loader #pageLoader { display: none !important; }
 </style>
 
 <!-- Skeleton Loader Overlay -->
@@ -97,23 +110,38 @@
         const loader = document.getElementById('pageLoader');
         if (loader) {
             loader.classList.add('hidden-loader');
+            // Hard hide it after fade out to ensure no pointer events block the screen
+            setTimeout(() => {
+                if (loader.classList.contains('hidden-loader')) {
+                    loader.style.display = 'none';
+                }
+            }, 400);
         }
     }
 
-    // Hide the loader gracefully when the page fully loads, but wait an extra 800ms
-    // to give the user time to see the colored skeleton loading effect.
+    // Hide the loader gracefully when the page fully loads
     window.addEventListener('load', () => {
-        setTimeout(hideLoaderAndRevert, 800);
+        // If we skipped the loader (due to a form submit or action), revert instantly
+        if (document.documentElement.classList.contains('skip-loader')) {
+            hideLoaderAndRevert();
+        } else {
+            // Otherwise, let the user see the skeleton effect for a brief moment
+            setTimeout(hideLoaderAndRevert, 800);
+        }
     });
 
     // --- BULLETPROOF BROWSER BACK BUTTON FIX ---
-    // Fire unconditionally on pageshow to catch all back-button navigations
     window.addEventListener('pageshow', (e) => {
-        if(e.persisted) {
-            hideLoaderAndRevert(); // Instant revert if pulled from bfcache
+        if(e.persisted || document.documentElement.classList.contains('skip-loader')) {
+            hideLoaderAndRevert(); // Instant revert if pulled from bfcache or skipping
         } else {
             setTimeout(hideLoaderAndRevert, 800);
         }
+    });
+
+    // Set flag on ALL form submissions to bypass the loader when the page reloads
+    document.addEventListener('submit', () => {
+        sessionStorage.setItem('skipLoader', 'true');
     });
 
     // Show the loader and trigger smooth transition when clicking navigation links
@@ -122,18 +150,31 @@
             link.addEventListener('click', e => { 
                 const href = link.getAttribute('href'); 
                 if (!href || href === "javascript:void(0);") return; 
+
+                // Check if this link is just navigating to a different tab/action on the exact same page
+                try {
+                    const targetUrl = new URL(link.href, window.location.href);
+                    const currentUrl = new URL(window.location.href);
+                    
+                    if (targetUrl.pathname === currentUrl.pathname) {
+                        sessionStorage.setItem('skipLoader', 'true');
+                        return; // Let the browser handle the same-page redirect instantly
+                    }
+                } catch(err) {}
+
                 e.preventDefault(); 
                 
-                // Show loader immediately
+                // It's a cross-page navigation, so show the skeleton loader immediately
                 const loader = document.getElementById('pageLoader');
                 if (loader) {
+                    loader.style.display = 'flex';
                     loader.classList.remove('hidden-loader');
                 }
 
                 // Apply page exit animation
                 document.body.classList.add('page-exit'); 
                 
-                // Delay actual navigation to allow animations to play (Increased to 500ms)
+                // Delay actual navigation to allow animations to play
                 setTimeout(() => {
                     window.location.href = href;
                 }, 500); 

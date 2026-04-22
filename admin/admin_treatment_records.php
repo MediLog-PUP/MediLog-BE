@@ -7,7 +7,6 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'facu
     exit();
 }
 
-
 $user_id = $_SESSION['user_id'];
 $success_msg = '';
 $error_msg = '';
@@ -250,7 +249,7 @@ try {
                                     <th class="p-4 font-semibold">Gender</th>
                                     <th class="p-4 font-semibold">Complaints</th>
                                     <th class="p-4 font-semibold">Treatment / Medicines</th>
-                                    <th class="p-4 font-semibold text-center">Quantity</th>
+                                    <th class="p-4 font-semibold text-center">Qty</th>
                                     <th class="p-4 font-semibold">Faculty / Physician</th>
                                     <th class="p-4 font-semibold text-right">Actions</th>
                                 </tr>
@@ -481,7 +480,7 @@ try {
                     </div>
                 </div>
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 flex flex-col sm:flex-row-reverse gap-2">
-                    <a href="../auth/logout.php" class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:w-auto sm:text-sm transition-colors text-center">Sign Out</a>
+                    <a href="../logout.php" class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:w-auto sm:text-sm transition-colors text-center">Sign Out</a>
                     <button type="button" onclick="closeLogoutModal()" class="w-full inline-flex justify-center rounded-xl border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:w-auto sm:text-sm transition-colors">Cancel</button>
                 </div>
             </div>
@@ -608,9 +607,6 @@ try {
         function openLogoutModal() { const m = document.getElementById('logoutModal'); m.classList.remove('hidden'); setTimeout(() => { document.getElementById('logoutModalOverlay').classList.replace('opacity-0', 'opacity-100'); document.getElementById('logoutModalPanel').classList.replace('opacity-0', 'opacity-100'); document.getElementById('logoutModalPanel').classList.replace('translate-y-4', 'translate-y-0'); document.getElementById('logoutModalPanel').classList.replace('sm:scale-95', 'sm:scale-100'); }, 10); }
         function closeLogoutModal() { document.getElementById('logoutModalOverlay').classList.replace('opacity-100', 'opacity-0'); document.getElementById('logoutModalPanel').classList.replace('opacity-100', 'opacity-0'); document.getElementById('logoutModalPanel').classList.replace('translate-y-0', 'translate-y-4'); document.getElementById('logoutModalPanel').classList.replace('sm:scale-100', 'sm:scale-95'); setTimeout(() => document.getElementById('logoutModal').classList.add('hidden'), 300); }
         
-        // Keep this script but remove the 'a' click event listener since global_loader.php handles it.
-        // document.addEventListener('DOMContentLoaded', () => { 
-        // });
     </script>
 </body>
 </html>
