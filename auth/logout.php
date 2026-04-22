@@ -1,10 +1,8 @@
 <?php
-// Suppress any background PHP notices/warnings from flashing on the screen
 error_reporting(0); 
 
 session_start();
 
-// Rigorously wipe all session data before destroying
 $_SESSION = array();
 session_unset();
 session_destroy();
@@ -23,12 +21,9 @@ session_destroy();
 </head>
 <body class="bg-gray-50 flex h-screen items-center justify-center overflow-hidden">
     
-    <!-- We inject the global skeleton loader directly here to show it immediately -->
-    <!-- Added '@' to suppress any include warnings just in case -->
     <?php @include 'global_loader.php'; ?>
 
     <script>
-        // Force the skeleton loader to be visible instantly
         const loader = document.getElementById('pageLoader');
         if (loader) {
             loader.classList.remove('hidden-loader');
@@ -36,7 +31,6 @@ session_destroy();
             loader.style.visibility = 'visible';
         }
 
-        // Redirect smoothly back to the main landing page
         setTimeout(() => {
             window.location.href = '../index.php';
         }, 800);

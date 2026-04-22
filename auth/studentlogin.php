@@ -1,13 +1,10 @@
 <?php
 session_start();
 
-// --- BROWSER BACK BUTTON FIX ---
-// Prevents the browser from caching the login page.
 header("Cache-Control: no-cache, no-store, must-revalidate"); 
 header("Pragma: no-cache"); 
 header("Expires: 0"); 
 
-// If already logged in as student, instantly redirect to dashboard
 if (isset($_SESSION['user_id']) && isset($_SESSION['role']) && $_SESSION['role'] === 'student') {
     header("Location: ../student/student_dashboard.php");
     exit();
@@ -25,7 +22,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->execute([$id_number]);
         $user = $stmt->fetch();
 
-        // Assuming you use password_hash() for registration. If using plain text for testing, change to $password === $user['password']
         if ($user && password_verify($password, $user['password'])) {
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['role'] = $user['role'];
@@ -77,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </script>
     <style>
         .pattern-move {
-            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-image: radial-gradient(rgba(136, 0, 0, 0.1) 1px, transparent 1px); /* Faint maroon dots */
             background-size: 24px 24px;
             animation: patternMove 20s linear infinite;
         }
@@ -87,39 +83,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     </style>
 </head>
-<body class="font-sans antialiased bg-white text-gray-900 min-h-screen flex">
+<body class="font-sans antialiased bg-gray-50 text-gray-900 min-h-screen flex">
 
-    <!-- Left Side: Branding / Graphic with Moving Blobs (Hidden on mobile) -->
-    <div class="hidden lg:flex w-1/2 bg-gradient-to-br from-pup-maroon via-red-900 to-red-950 animate-gradient bg-[length:400%_400%] p-12 flex-col justify-between relative overflow-hidden text-white">
+    <div class="hidden lg:flex w-1/2 bg-gradient-to-br from-pup-maroonDark via-pup-maroon to-red-900 animate-gradient bg-[length:400%_400%] p-12 flex-col justify-between relative overflow-hidden text-white shadow-[inset_-10px_0_30px_rgba(0,0,0,0.1)]">
         
-        <!-- Animated Background Blobs -->
         <div class="absolute top-0 right-0 -mt-20 -mr-20 w-96 h-96 bg-white opacity-10 rounded-full blur-3xl animate-blob"></div>
         <div class="absolute bottom-0 left-0 -mb-20 -ml-20 w-80 h-80 bg-pup-gold opacity-20 rounded-full blur-3xl animate-blob" style="animation-delay: 2s;"></div>
         <div class="absolute top-1/2 left-1/4 transform -translate-y-1/2 w-72 h-72 bg-red-400 opacity-20 rounded-full blur-3xl animate-blob" style="animation-delay: 4s;"></div>
 
         <div class="relative z-10 flex items-center gap-3">
-            <div class="bg-white/20 p-2.5 rounded-xl backdrop-blur-sm border border-white/30"><i data-lucide="clipboard-heart" class="h-8 w-8 text-pup-gold"></i></div>
-            <span class="font-bold text-2xl tracking-tight">MediLog Clinic</span>
+            <img src="../img/ml.png" alt="MediLog Logo" class="h-10 w-auto object-contain">
+            <span class="font-bold text-2xl tracking-tight drop-shadow-md">MediLog Clinic</span>
         </div>
 
         <div class="relative z-10 max-w-md">
-            <h1 class="text-4xl md:text-5xl font-extrabold mb-6 leading-tight">Student Health <br>Portal</h1>
-            <p class="text-red-100/80 text-lg mb-8 leading-relaxed">Book appointments, request medical clearances, and securely access your health records anytime, anywhere.</p>
-            <div class="flex items-center gap-4 text-sm font-medium text-white/70">
-                <div class="flex items-center gap-2"><i data-lucide="check-circle-2" class="h-4 w-4 text-pup-gold"></i> Secure Access</div>
-                <div class="flex items-center gap-2"><i data-lucide="check-circle-2" class="h-4 w-4 text-pup-gold"></i> 24/7 Availability</div>
-            </div>
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-6 leading-tight drop-shadow-md">Student Health <br>Portal</h1>
+            <p class="text-red-100/90 text-lg mb-8 leading-relaxed font-medium">Book appointments, request medical clearances, and securely access your health records anytime, anywhere.</p>
         </div>
 
-        <div class="relative z-10 text-sm text-red-200/60 font-medium">
+        <div class="relative z-10 text-sm text-red-200/70 font-medium">
             &copy; <?= date('Y') ?> MediLog System. All rights reserved.
         </div>
     </div>
 
-    <!-- Right Side: Login Form with Moving Pattern -->
     <div class="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-16 md:px-24 py-12 relative bg-gray-50/80 pattern-move">
         
-        <!-- Subtle gradient overlay to soften the pattern -->
         <div class="absolute inset-0 bg-gradient-to-b from-white via-transparent to-gray-50/90 pointer-events-none"></div>
 
         <a href="../index.php" class="absolute top-8 left-8 sm:left-12 inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-pup-maroon transition-colors group z-10">
@@ -129,14 +117,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             Back to Home
         </a>
 
-        <div class="max-w-md w-full mx-auto mt-12 lg:mt-0 relative z-10 bg-white/60 backdrop-blur-md p-8 sm:p-10 rounded-3xl shadow-xl border border-white/50">
+        <div class="max-w-md w-full mx-auto mt-12 lg:mt-0 relative z-10 bg-white/70 backdrop-blur-md p-8 sm:p-10 rounded-3xl shadow-xl border border-white/60">
             <div class="lg:hidden flex items-center gap-3 mb-8">
-                <div class="bg-pup-maroon p-2.5 rounded-xl shadow-lg"><i data-lucide="clipboard-heart" class="h-6 w-6 text-pup-gold"></i></div>
+                <img src="../your-logo-here.png" alt="MediLog Logo" class="h-10 w-auto object-contain">
                 <span class="font-bold text-2xl tracking-tight text-gray-900">MediLog</span>
             </div>
 
             <div class="mb-8">
-                <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">Welcome Back! 👋</h2>
+                <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">Welcome Back! </h2>
                 <p class="text-gray-500 mt-2 font-medium">Please sign in to your student account.</p>
             </div>
 
@@ -178,7 +166,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </form>
 
             <p class="mt-8 text-center text-sm text-gray-600 font-medium">
-                Don't have an account? <a href="register.php" class="font-bold text-pup-maroon hover:text-pup-maroonDark transition-colors">Register here</a>
+                Don't have an account? <a href="studentregister.php" class="font-bold text-pup-maroon hover:text-pup-maroonDark transition-colors">Register here</a>
             </p>
         </div>
     </div>

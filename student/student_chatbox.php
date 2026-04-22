@@ -9,6 +9,10 @@ if (!isset($pdo)) {
     $is_ajax_call = true;
 }
 
+// GUARANTEE CORRECT TIMEZONE FOR REAL-TIME DATES (PHILIPPINES)
+date_default_timezone_set('Asia/Manila');
+try { $pdo->exec("SET time_zone = '+08:00'"); } catch (Exception $e) {}
+
 // --- AJAX ENDPOINTS ---
 // Handle AJAX Sending
 if (isset($_POST['ajax_send_msg'])) {

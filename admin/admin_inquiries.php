@@ -2,7 +2,9 @@
 session_start();
 require '../db_connect.php';
 
-// Allow BOTH admin and super_admin
+date_default_timezone_set('Asia/Manila');
+try { $pdo->exec("SET time_zone = '+08:00'"); } catch (Exception $e) {}
+
 if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'faculty', 'super_admin'])) {
     header("Location: ../auth/facultylogin.php");
     exit();
@@ -13,10 +15,7 @@ $is_super_admin = ($_SESSION['role'] === 'super_admin');
 $is_chat_selected = isset($_GET['student_id']);
 $active_chat_id = isset($_GET['student_id']) ? intval($_GET['student_id']) : null;
 
-// Handle AJAX Fetching of Messages (Polling)
-if (isset($_GET['ajax_fetch_chat']) && $active_chat_id) {
-    // FIX: Properly fetch conversation for the student.
-    // Fetch all messages where sender OR receiver is the student.
+if (isset($_GET['ajax_fetch_chat']) && $active_chat_id) {  
     $msgStmt = $pdo->prepare("
         SELECT m.*, u.role as sender_role, u.full_name as sender_name 
         FROM messages m 
@@ -55,20 +54,16 @@ if (isset($_GET['ajax_fetch_chat']) && $active_chat_id) {
     exit;
 }
 
-// Handle AJAX Sending of Message
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ajax_send_msg']) && $active_chat_id) {
     $msg = trim($_POST['message']);
     if (!empty($msg)) {
-        // Insert message (Sender = Admin, Receiver = Student)
         $stmt = $pdo->prepare("INSERT INTO messages (sender_id, receiver_id, message) VALUES (?, ?, ?)");
         $stmt->execute([$admin_id, $active_chat_id, $msg]);
 
-        // Get admin info for notification
         $stmtAdmin = $pdo->prepare("SELECT full_name FROM users WHERE id = ?");
         $stmtAdmin->execute([$admin_id]);
         $admin_name = $stmtAdmin->fetchColumn();
 
-        // Create Admin Notification
         $stuNameStmt = $pdo->prepare("SELECT full_name FROM users WHERE id = ?");
         $stuNameStmt->execute([$active_chat_id]);
         $stu_name = $stuNameStmt->fetchColumn();
@@ -76,7 +71,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ajax_send_msg']) && $a
         $admin_notif_msg = "[Message] Faculty " . $admin_name . " responded to an inquiry from " . $stu_name . ".";
         $pdo->prepare("INSERT INTO notifications (user_id, message) VALUES (NULL, ?)")->execute([$admin_notif_msg]);
 
-        // Notify the student
         $stu_notif_msg = "[Message] The Clinic Administration replied to your inquiry.";
         $pdo->prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)")->execute([$active_chat_id, $stu_notif_msg]);
     }
@@ -84,7 +78,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ajax_send_msg']) && $a
     exit();
 }
 
-// Regular Page Load Initialization
 $stmt = $pdo->prepare("SELECT full_name, profile_pic FROM users WHERE id = ?");
 $stmt->execute([$admin_id]);
 $user = $stmt->fetch();
@@ -103,11 +96,9 @@ function getProfilePic($pic_name, $full_name) {
 
 $profile_pic = getProfilePic($user['profile_pic'], $user['full_name']);
 
-// Fetch all students to display in the chat sidebar
 $studentStmt = $pdo->query("SELECT id, full_name, course, profile_pic FROM users WHERE role = 'student' ORDER BY full_name ASC");
 $students = $studentStmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Auto-select first on desktop
 if (!$is_chat_selected && count($students) > 0) {
     $active_chat_id = $students[0]['id']; 
 }
@@ -120,7 +111,6 @@ if ($active_chat_id) {
     $stuStmt->execute([$active_chat_id]);
     $active_student = $stuStmt->fetch();
 
-    // Fetch initial chat history properly linked to the student
     $msgStmt = $pdo->prepare("
         SELECT m.*, u.role as sender_role, u.full_name as sender_name 
         FROM messages m 
@@ -190,41 +180,53 @@ if ($active_chat_id) {
     </nav>
 
     <main class="flex-1 flex flex-col h-full bg-white relative pb-20 md:pb-0">
-        <header class="bg-white border-b border-gray-200 px-4 md:px-8 py-4 flex items-center justify-between z-10 shadow-sm flex-shrink-0">
-            <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Student Inquiries</h1>
+        <header class="<?= $is_chat_selected ? 'hidden md:flex' : 'flex' ?> bg-white border-b border-gray-200 px-4 md:px-8 py-4 items-center justify-between z-10 shadow-sm flex-shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="md:hidden bg-pup-maroon text-white p-1.5 rounded-lg mr-2"><i data-lucide="shield-plus" class="h-5 w-5 text-pup-gold"></i></div>
+                <h1 class="text-xl md:text-2xl font-bold text-gray-900">Inquiries</h1>
+            </div>
             <div class="flex items-center gap-3 sm:gap-4">
-                <?php if($is_super_admin): ?>
-                    <span class="text-xs sm:text-sm font-bold text-white bg-purple-600 px-2 sm:px-3 py-1 rounded-full hidden sm:inline-block"><i data-lucide="shield-alert" class="h-3 w-3 sm:h-4 sm:w-4 inline mr-1"></i> Super Admin</span>
-                <?php else: ?>
-                    <span class="text-xs sm:text-sm font-bold text-gray-700 bg-gray-100 px-2 sm:px-3 py-1 rounded-full hidden sm:inline-block"><i data-lucide="shield-check" class="h-3 w-3 sm:h-4 sm:w-4 inline mr-1 text-green-600"></i> Clinic Admin</span>
-                <?php endif; ?>
-                <p class="text-sm font-semibold text-gray-900 hidden sm:block"><?= htmlspecialchars($user['full_name']) ?></p>
-                <img src="<?= $profile_pic ?>" alt="Profile" class="h-9 w-9 sm:h-10 sm:w-10 rounded-full border-2 border-gray-200 object-cover">
+                <a href="admin_notifications.php" class="text-gray-500 hover:text-pup-maroon p-2 bg-gray-50 hover:bg-red-50 rounded-full border border-gray-200 relative"><i data-lucide="bell" class="h-5 w-5"></i></a>
+                <button onclick="openLogoutModal()" class="md:hidden text-gray-500 hover:text-red-600 transition-colors p-2 bg-gray-50 rounded-full border border-gray-200"><i data-lucide="log-out" class="h-5 w-5"></i></button>
+                <div class="hidden md:flex items-center gap-3 pl-4 border-l border-gray-200">
+                    <span class="text-sm font-semibold text-gray-700 bg-gray-100 px-3 py-1 rounded-full mr-2"><i data-lucide="shield-check" class="h-4 w-4 inline mr-1 text-green-600"></i> Admin Session</span>
+                    <div class="text-right">
+                        <p class="text-sm font-semibold text-gray-900"><?= htmlspecialchars($user['full_name']) ?></p>
+                    </div>
+                    <img src="<?= $profile_pic ?>" alt="Profile" class="h-10 w-10 rounded-full border-2 border-gray-200 object-cover">
+                </div>
             </div>
         </header>
 
-        <div class="flex-1 flex overflow-hidden">
-            <!-- Student List -->
-            <div class="w-24 sm:w-1/3 md:w-1/4 lg:w-1/3 border-r border-gray-200 overflow-y-auto bg-gray-50 flex-shrink-0 pb-10">
-                <?php foreach($students as $cs): 
-                    $stu_pic = getProfilePic($cs['profile_pic'], $cs['full_name']);
-                ?>
-                    <a href="?student_id=<?= $cs['id'] ?>" class="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 p-3 sm:p-4 border-b border-gray-100 hover:bg-white transition-colors <?= $active_chat_id == $cs['id'] ? 'bg-white border-l-4 border-l-pup-maroon shadow-sm' : '' ?>">
-                        <img src="<?= $stu_pic ?>" class="h-10 w-10 sm:h-10 sm:w-10 rounded-full border border-gray-200 object-cover flex-shrink-0">
-                        <div class="overflow-hidden hidden sm:block">
-                            <h3 class="font-bold text-gray-900 truncate text-sm sm:text-base"><?= htmlspecialchars($cs['full_name']) ?></h3>
-                            <p class="text-xs text-gray-500 truncate"><?= htmlspecialchars($cs['course'] ?? 'Student') ?></p>
-                        </div>
-                    </a>
-                <?php endforeach; ?>
+        <div class="flex-1 flex flex-col md:flex-row overflow-hidden bg-white pb-[72px] md:pb-0">
+            <div class="<?= $is_chat_selected ? 'hidden md:flex' : 'flex' ?> w-full md:w-1/3 lg:w-1/4 border-r border-gray-200 flex-col h-full bg-gray-50">
+                <div class="p-4 border-b border-gray-200 bg-white flex items-center justify-between z-10 shadow-sm flex-shrink-0">
+                    <h2 class="text-lg font-bold text-gray-900">Student Chats</h2>
+                </div>
+                <div class="flex-1 overflow-y-auto divide-y divide-gray-100">
+                    <?php if(count($students) > 0): ?>
+                        <?php foreach($students as $stu): 
+                            $s_pic = getProfilePic($stu['profile_pic'], $stu['full_name']);
+                            $isActive = ($active_chat_id == $stu['id']) ? 'bg-red-50 border-l-4 border-pup-maroon' : 'hover:bg-gray-100 border-l-4 border-transparent bg-white';
+                        ?>
+                            <a href="admin_inquiries.php?student_id=<?= $stu['id'] ?>" class="p-4 flex items-center gap-3 cursor-pointer transition-colors <?= $isActive ?>">
+                                <img src="<?= $s_pic ?>" class="w-10 h-10 rounded-full object-cover border border-gray-200 shadow-sm">
+                                <div class="flex-1 overflow-hidden">
+                                    <h3 class="font-bold text-gray-900 text-sm truncate"><?= htmlspecialchars($stu['full_name']) ?></h3>
+                                    <p class="text-xs text-gray-500 truncate"><?= htmlspecialchars($stu['course'] ?? 'Student') ?></p>
+                                </div>
+                            </a>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div class="p-4 text-center text-gray-500 text-sm">No students found.</div>
+                    <?php endif; ?>
+                </div>
             </div>
 
-            <!-- Chat Area -->
             <div class="<?= $is_chat_selected ? 'flex' : 'hidden md:flex' ?> flex-1 flex-col h-full relative bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-gray-50/50">
                 <?php if($active_student): 
                     $active_stu_pic = getProfilePic($active_student['profile_pic'], $active_student['full_name']);
                 ?>
-                    <!-- Chat Header with Student Photo -->
                     <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 bg-white flex items-center gap-3 sm:gap-4 shadow-sm z-10 flex-shrink-0">
                         <a href="admin_inquiries.php" class="md:hidden mr-3 p-1.5 rounded-lg bg-gray-50 text-gray-500 hover:text-gray-900 transition-colors border border-gray-200">
                             <i data-lucide="arrow-left" class="h-5 w-5"></i>
@@ -284,7 +286,7 @@ if ($active_chat_id) {
                     </div>
                 </div>
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 flex flex-col sm:flex-row-reverse gap-2">
-                    <a href="../logout.php" class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:w-auto sm:text-sm transition-colors text-center">Sign Out</a>
+                    <a href="../auth/logout.php" class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:w-auto sm:text-sm transition-colors text-center">Sign Out</a>
                     <button type="button" onclick="closeLogoutModal()" class="w-full inline-flex justify-center rounded-xl border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:w-auto sm:text-sm transition-colors">Cancel</button>
                 </div>
             </div>
@@ -300,7 +302,6 @@ if ($active_chat_id) {
         const chatBox = document.getElementById("chat-container");
         if(chatBox) chatBox.scrollTop = chatBox.scrollHeight;
 
-        // Fetch Messages Real-Time (Polling)
         if (activeChatId) {
             setInterval(() => {
                 fetch(`admin_inquiries.php?student_id=${activeChatId}&ajax_fetch_chat=1`)
@@ -315,7 +316,6 @@ if ($active_chat_id) {
             }, 2000);
         }
 
-        // Send Message via AJAX
         function sendAdminMessage(e, form) {
             e.preventDefault();
             const input = form.querySelector('input[name="message"]');
@@ -326,14 +326,13 @@ if ($active_chat_id) {
             formData.append('ajax_send_msg', '1');
             formData.append('message', msg);
 
-            input.value = ''; // Instantly clear input for better UX
+            input.value = ''; 
 
             fetch(`admin_inquiries.php?student_id=${activeChatId}`, {
                 method: 'POST',
                 body: formData
             })
             .then(() => {
-                // Immediately trigger a fetch after sending
                 return fetch(`admin_inquiries.php?student_id=${activeChatId}&ajax_fetch_chat=1`);
             })
             .then(res => res.text())

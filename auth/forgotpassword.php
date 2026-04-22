@@ -1,7 +1,5 @@
 <?php
 session_start();
-// Dummy placeholder for forgot password logic.
-// You would add mailer/token generation logic here.
 $msg = '';
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $msg = "If the email or ID exists, a recovery link has been sent.";
@@ -22,7 +20,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </head>
 <body class="font-sans antialiased text-gray-800 bg-gray-50 flex items-center justify-center min-h-screen relative overflow-hidden bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
 
-    <!-- Global Loader -->
     <?php include '../global_loader.php'; ?>
 
     <div class="absolute top-0 w-full h-2 bg-gray-300"></div>

@@ -20,7 +20,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($password !== $confirm_password) {
         $error = "Passwords do not match.";
     } else {
-        // Check if ID exists
         $stmt = $pdo->prepare("SELECT id FROM users WHERE id_number = ?");
         $stmt->execute([$id_number]);
         if ($stmt->fetch()) {
@@ -28,8 +27,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         } else {
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
             
-            // STRICT ENFORCEMENT: Force the role to be 'student' only.
-            // No faculty or admin accounts can ever be created through this page.
             $role = 'student';
             
             $insert = $pdo->prepare("INSERT INTO users (full_name, id_number, email, password, role) VALUES (?, ?, ?, ?, ?)");
@@ -57,7 +54,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </head>
 <body class="font-sans antialiased text-gray-800 bg-gray-50 flex items-center justify-center min-h-screen py-10 overflow-x-hidden relative bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
 
-    <!-- Global Loader -->
     <?php include '../global_loader.php'; ?>
 
     <div class="absolute top-0 w-full h-2 bg-pup-maroon"></div>
