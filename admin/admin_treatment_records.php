@@ -11,20 +11,20 @@ $user_id = $_SESSION['user_id'];
 $success_msg = '';
 $error_msg = '';
 
-// Auto-add new columns to health_records table if they don't exist
+// Under-the-hood table upgrade to explicitly track inventory interactions
 $new_columns = [
     'time_in' => 'TIME',
     'time_out' => 'TIME',
     'complaints' => 'TEXT',
     'treatment' => 'VARCHAR(255)',
-    'quantity' => 'INT'
+    'other_treatment' => 'VARCHAR(255)', // Separate custom text from med name
+    'quantity' => 'INT',
+    'medicine_id' => 'INT' // Explicit tracking for seamless refunds/deductions
 ];
 foreach ($new_columns as $col => $type) {
     try {
         $pdo->exec("ALTER TABLE health_records ADD COLUMN $col $type DEFAULT NULL");
-    } catch (PDOException $e) {
-        // Ignore if column already exists
-    }
+    } catch (PDOException $e) {}
 }
 
 // Handle Record Updates (Add / Edit / Delete)
@@ -36,13 +36,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         $time_in = !empty($_POST['time_in']) ? $_POST['time_in'] : null;
         $time_out = !empty($_POST['time_out']) ? $_POST['time_out'] : null;
         $complaints = $_POST['complaints'] ?? '';
+        $other_treatment = $_POST['other_treatment'] ?? '';
+        
         $medicine_id = !empty($_POST['medicine_id']) ? intval($_POST['medicine_id']) : null;
         $quantity = !empty($_POST['quantity']) ? intval($_POST['quantity']) : null;
-        $other_treatment = $_POST['other_treatment'] ?? '';
 
         $treatment_text = $other_treatment;
 
-        // Handle Inventory Deduction
+        // Handle Initial Inventory Deduction
         if ($medicine_id && $quantity > 0) {
             $medStmt = $pdo->prepare("SELECT name, quantity FROM medicine_inventory WHERE id = ?");
             $medStmt->execute([$medicine_id]);
@@ -54,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 $new_status = ($new_qty > 20) ? 'In Stock' : (($new_qty > 0) ? 'Low Stock' : 'Out of Stock');
                 $pdo->prepare("UPDATE medicine_inventory SET quantity=?, status=? WHERE id=?")->execute([$new_qty, $new_status, $medicine_id]);
 
-                // Construct Treatment string
+                // Construct full Treatment string for display
                 $med_string = $med['name'];
                 $treatment_text = empty($treatment_text) ? $med_string : $med_string . " + " . $treatment_text;
                 
@@ -67,13 +68,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 $pdo->prepare("INSERT INTO notifications (user_id, message) VALUES (NULL, ?)")->execute([$notif_msg]);
             } else {
                 $error_msg = "Insufficient stock for the selected medicine.";
+                $medicine_id = null; // Prevent saving bad reference if stock failed
             }
+        } else {
+            $medicine_id = null;
         }
 
         if (empty($error_msg)) {
-            // Save as Physician/Faculty action
-            $stmt = $pdo->prepare("INSERT INTO health_records (patient_id, physician_id, visit_date, time_in, time_out, service_reason, complaints, treatment, quantity, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Completed')");
-            $stmt->execute([$patient_id, $user_id, $visit_date, $time_in, $time_out, 'Clinic Visit', $complaints, $treatment_text, $quantity]);
+            $stmt = $pdo->prepare("INSERT INTO health_records (patient_id, physician_id, visit_date, time_in, time_out, service_reason, complaints, treatment, other_treatment, quantity, medicine_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Completed')");
+            $stmt->execute([$patient_id, $user_id, $visit_date, $time_in, $time_out, 'Clinic Visit', $complaints, $treatment_text, $other_treatment, $quantity, $medicine_id]);
             $success_msg = "New treatment record added successfully and linked to the student.";
         }
         
@@ -82,19 +85,83 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         $time_in = !empty($_POST['time_in']) ? $_POST['time_in'] : null;
         $time_out = !empty($_POST['time_out']) ? $_POST['time_out'] : null;
         $complaints = !empty($_POST['complaints']) ? $_POST['complaints'] : null;
-        $treatment = !empty($_POST['treatment']) ? $_POST['treatment'] : null;
-        $quantity = $_POST['quantity'] !== '' ? intval($_POST['quantity']) : null;
+        $other_treatment = $_POST['other_treatment'] ?? '';
+        
+        $new_medicine_id = !empty($_POST['medicine_id']) ? intval($_POST['medicine_id']) : null;
+        $new_quantity = !empty($_POST['quantity']) ? intval($_POST['quantity']) : null;
 
-        $stmt = $pdo->prepare("UPDATE health_records SET time_in=?, time_out=?, complaints=?, treatment=?, quantity=? WHERE id=?");
-        if($stmt->execute([$time_in, $time_out, $complaints, $treatment, $quantity, $hr_id])) {
-            $success_msg = "Treatment record updated successfully.";
+        // Fetch old record data to process refunds
+        $oldStmt = $pdo->prepare("SELECT medicine_id, quantity FROM health_records WHERE id = ?");
+        $oldStmt->execute([$hr_id]);
+        $oldRec = $oldStmt->fetch();
+
+        $treatment_text = $other_treatment;
+        $inventory_error = false;
+
+        // Step 1: Pre-verify if new medicine choice has enough stock
+        if ($new_medicine_id && $new_quantity > 0) {
+            $medStmt = $pdo->prepare("SELECT name, quantity FROM medicine_inventory WHERE id = ?");
+            $medStmt->execute([$new_medicine_id]);
+            $med = $medStmt->fetch();
+
+            $required_stock = $new_quantity;
+            // If they just tweaked the quantity of the same medicine, we only need the difference
+            if ($oldRec['medicine_id'] == $new_medicine_id) {
+                $required_stock = $new_quantity - intval($oldRec['quantity']);
+            }
+
+            if (!$med || $med['quantity'] < $required_stock) {
+                $error_msg = "Insufficient stock for the selected medicine update.";
+                $inventory_error = true;
+            } else {
+                $med_string = $med['name'];
+                $treatment_text = empty($treatment_text) ? $med_string : $med_string . " + " . $treatment_text;
+            }
         } else {
-            $error_msg = "Failed to update the treatment record.";
+            $new_medicine_id = null;
+            $new_quantity = null;
         }
+
+        // Step 2: Only proceed to refund/deduct/save if stock check passed
+        if (!$inventory_error) {
+            // Refund Old Medicine stock back to inventory
+            if ($oldRec['medicine_id'] && $oldRec['quantity'] > 0) {
+                $pdo->prepare("UPDATE medicine_inventory SET quantity = quantity + ?, status = CASE WHEN quantity + ? > 20 THEN 'In Stock' WHEN quantity + ? > 0 THEN 'Low Stock' ELSE 'Out of Stock' END WHERE id = ?")
+                    ->execute([$oldRec['quantity'], $oldRec['quantity'], $oldRec['quantity'], $oldRec['medicine_id']]);
+            }
+
+            // Deduct New Medicine stock from inventory
+            if ($new_medicine_id && $new_quantity > 0) {
+                $pdo->prepare("UPDATE medicine_inventory SET quantity = quantity - ?, status = CASE WHEN quantity - ? > 20 THEN 'In Stock' WHEN quantity - ? > 0 THEN 'Low Stock' ELSE 'Out of Stock' END WHERE id = ?")
+                    ->execute([$new_quantity, $new_quantity, $new_quantity, $new_medicine_id]);
+            }
+
+            // Save the updated record
+            $stmt = $pdo->prepare("UPDATE health_records SET time_in=?, time_out=?, complaints=?, treatment=?, other_treatment=?, quantity=?, medicine_id=? WHERE id=?");
+            if($stmt->execute([$time_in, $time_out, $complaints, $treatment_text, $other_treatment, $new_quantity, $new_medicine_id, $hr_id])) {
+                $success_msg = "Treatment record updated and inventory dynamically adjusted.";
+            } else {
+                $error_msg = "Failed to update the treatment record.";
+            }
+        }
+        
     } elseif ($_POST['action'] === 'delete_record') {
         $hr_id = intval($_POST['record_id']);
+        
+        // Fetch old record before deletion to refund inventory
+        $oldStmt = $pdo->prepare("SELECT medicine_id, quantity FROM health_records WHERE id = ?");
+        $oldStmt->execute([$hr_id]);
+        $oldRec = $oldStmt->fetch();
+        
         if($pdo->prepare("DELETE FROM health_records WHERE id=?")->execute([$hr_id])) {
-            $success_msg = "Treatment record deleted successfully.";
+            
+            // Automatically return medicine to the inventory
+            if ($oldRec['medicine_id'] && $oldRec['quantity'] > 0) {
+                $pdo->prepare("UPDATE medicine_inventory SET quantity = quantity + ?, status = CASE WHEN quantity + ? > 20 THEN 'In Stock' WHEN quantity + ? > 0 THEN 'Low Stock' ELSE 'Out of Stock' END WHERE id = ?")
+                    ->execute([$oldRec['quantity'], $oldRec['quantity'], $oldRec['quantity'], $oldRec['medicine_id']]);
+            }
+            
+            $success_msg = "Treatment record deleted successfully and medicine stock has been refunded.";
         } else {
             $error_msg = "Failed to delete the treatment record.";
         }
@@ -119,8 +186,8 @@ if (!empty($user['profile_pic']) && $user['profile_pic'] !== 'default.png') {
 $studentsListStmt = $pdo->query("SELECT id, full_name, dob, gender FROM users WHERE role='student' ORDER BY full_name ASC");
 $students_list = $studentsListStmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Fetch Medicines for Add Record Dropdown
-$medsListStmt = $pdo->query("SELECT id, name, quantity FROM medicine_inventory WHERE quantity > 0 ORDER BY name ASC");
+// Fetch ALL Medicines (Including empty ones so edits can see out of stock items)
+$medsListStmt = $pdo->query("SELECT id, name, quantity FROM medicine_inventory ORDER BY name ASC");
 $meds_list = $medsListStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch All Treatment Records
@@ -162,7 +229,6 @@ try {
 </head>
 <body class="font-sans antialiased text-gray-800 bg-gray-50 flex h-screen overflow-hidden">
 
-    <!-- Include the global loading screen -->
     <?php include '../global_loader.php'; ?>
 
     <aside class="hidden md:flex flex-col w-64 bg-gray-900 text-white h-full shadow-xl z-20 flex-shrink-0">
@@ -170,12 +236,13 @@ try {
             <div class="bg-pup-gold text-gray-900 p-2 rounded-lg"><i data-lucide="shield-plus" class="h-6 w-6"></i></div>
             <span class="font-bold text-xl tracking-tight text-white">MediLog Admin</span>
         </div>
-        <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+        <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto no-scrollbar">
             <a href="admin_dashboard.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="layout-dashboard" class="h-5 w-5"></i> Overview</a>
             <a href="medicine_inventory.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="pill" class="h-5 w-5"></i> Inventory</a>
             <a href="patient_records.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="users" class="h-5 w-5"></i> Patient Records</a>
             <a href="admin_treatment_records.php" class="flex items-center gap-3 px-4 py-3 bg-pup-maroon text-white rounded-xl font-medium transition-colors shadow-sm"><i data-lucide="clipboard-list" class="h-5 w-5"></i> Treatment Records</a>
             <a href="admin_appointments.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="calendar" class="h-5 w-5"></i> Appointments</a>
+            <a href="admin_schedule.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="clock" class="h-5 w-5"></i> Clinic Schedule</a>
             <a href="admin_clearance.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="file-check-2" class="h-5 w-5"></i> Clearances</a>
             <a href="admin_inquiries.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="message-square" class="h-5 w-5"></i> Inquiries</a>
             <a href="admin_profile.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="user-cog" class="h-5 w-5"></i> Profile</a>
@@ -191,8 +258,9 @@ try {
             <a href="admin_dashboard.php" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors"><i data-lucide="layout-dashboard" class="h-5 w-5"></i><span class="text-[10px] font-medium mt-1">Home</span></a>
             <a href="medicine_inventory.php" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors"><i data-lucide="pill" class="h-5 w-5"></i><span class="text-[10px] font-medium mt-1">Inventory</span></a>
             <a href="patient_records.php" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors"><i data-lucide="users" class="h-5 w-5"></i><span class="text-[10px] font-medium mt-1">Patients</span></a>
-            <a href="admin_treatment_records.php" class="flex flex-col items-center p-2.5 min-w-[72px] text-pup-maroon transition-colors"><i data-lucide="clipboard-list" class="h-5 w-5"></i><span class="text-[10px] font-medium mt-1">Treatments</span></a>
-            <a href="admin_appointments.php" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors"><i data-lucide="calendar" class="h-5 w-5"></i><span class="text-[10px] font-medium mt-1">Schedule</span></a>
+            <a href="admin_treatment_records.php" class="flex flex-col items-center p-2.5 min-w-[72px] text-pup-maroon transition-colors relative"><i data-lucide="clipboard-list" class="h-5 w-5"></i><span class="text-[10px] font-medium mt-1">Treatments</span><span class="absolute top-0 w-8 h-1 bg-pup-maroon rounded-b-md"></span></a>
+            <a href="admin_appointments.php" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors"><i data-lucide="calendar" class="h-5 w-5"></i><span class="text-[10px] font-medium mt-1">Appts</span></a>
+            <a href="admin_schedule.php" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors"><i data-lucide="clock" class="h-5 w-5"></i><span class="text-[10px] font-medium mt-1">Schedule</span></a>
             <a href="admin_clearance.php" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors"><i data-lucide="file-check-2" class="h-5 w-5"></i><span class="text-[10px] font-medium mt-1">Clearances</span></a>
             <a href="admin_inquiries.php" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors"><i data-lucide="message-square" class="h-5 w-5"></i><span class="text-[10px] font-medium mt-1">Inquiries</span></a>
             <a href="admin_profile.php" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors"><i data-lucide="user-cog" class="h-5 w-5"></i><span class="text-[10px] font-medium mt-1">Profile</span></a>
@@ -296,7 +364,6 @@ try {
         </div>
     </main>
 
-    <!-- Add Record Modal -->
     <div id="addRecordModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div id="addRecordOverlay" class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity opacity-0 duration-300" onclick="closeAddRecordModal()"></div>
@@ -328,7 +395,6 @@ try {
                             </div>
                         </div>
 
-                        <!-- Auto-filled demographics -->
                         <div class="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
                             <div>
                                 <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Auto-Calculated Age</p>
@@ -363,9 +429,12 @@ try {
                                     <label class="block text-xs font-medium text-gray-700 mb-1">Select Inventory Medicine (Optional)</label>
                                     <select name="medicine_id" id="add-med-select" class="block w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm bg-white" onchange="handleMedSelect()">
                                         <option value="">No medicine dispensed</option>
-                                        <?php foreach($meds_list as $m): ?>
+                                        <?php foreach($meds_list as $m): 
+                                            // Only allow selecting meds that are in stock for adding
+                                            if($m['quantity'] > 0):
+                                        ?>
                                             <option value="<?= $m['id'] ?>" data-qty="<?= $m['quantity'] ?>"><?= htmlspecialchars($m['name']) ?> (Stock: <?= $m['quantity'] ?>)</option>
-                                        <?php endforeach; ?>
+                                        <?php endif; endforeach; ?>
                                     </select>
                                 </div>
                                 <div>
@@ -390,48 +459,62 @@ try {
         </div>
     </div>
 
-    <!-- Edit Record Modal -->
     <div id="editRecordModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div id="editRecordOverlay" class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity opacity-0 duration-300" onclick="closeEditRecordModal()"></div>
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
             <div id="editRecordPanel" class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95 duration-300">
-                <form action="admin_treatment_records.php" method="POST">
+                <form action="admin_treatment_records.php" method="POST" class="flex flex-col max-h-[90vh]">
                     <input type="hidden" name="action" value="edit_record">
                     <input type="hidden" name="record_id" id="edit-record-id">
-                    <div class="bg-white px-6 pt-6 pb-6 border-b border-gray-100">
-                        <div class="flex items-center justify-between mb-5">
+                    <div class="bg-white px-6 pt-6 pb-4 border-b border-gray-100 flex-shrink-0">
+                        <div class="flex items-center justify-between">
                             <h3 class="text-xl font-bold text-gray-900">Edit Treatment Record</h3>
                             <button type="button" onclick="closeEditRecordModal()" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" class="h-6 w-6"></i></button>
                         </div>
-                        <div class="space-y-4">
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Time In</label>
-                                    <input type="time" name="time_in" id="edit-time-in" class="block w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm">
+                    </div>
+                    
+                    <div class="px-6 py-6 overflow-y-auto space-y-4 bg-white flex-1">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Time In</label>
+                                <input type="time" name="time_in" id="edit-time-in" class="block w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Time Out</label>
+                                <input type="time" name="time_out" id="edit-time-out" class="block w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Complaints / Reason</label>
+                            <textarea name="complaints" id="edit-complaints" rows="2" class="block w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm"></textarea>
+                        </div>
+
+                        <div class="border-t border-gray-100 pt-4">
+                            <h4 class="text-sm font-bold text-gray-900 mb-3">Modify Treatment Details</h4>
+                            <div class="grid grid-cols-3 gap-4 mb-4">
+                                <div class="col-span-2">
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Select Inventory Medicine (Optional)</label>
+                                    <select name="medicine_id" id="edit-med-select" class="block w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm bg-white" onchange="handleEditMedSelect()">
+                                        <option value="">No medicine dispensed</option>
+                                        <?php foreach($meds_list as $m): ?>
+                                            <option value="<?= $m['id'] ?>" data-qty="<?= $m['quantity'] ?>"><?= htmlspecialchars($m['name']) ?> (Stock: <?= $m['quantity'] ?>)</option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Time Out</label>
-                                    <input type="time" name="time_out" id="edit-time-out" class="block w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm">
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Dispense Qty</label>
+                                    <input type="number" name="quantity" id="edit-med-qty" min="1" disabled placeholder="0" class="block w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed">
+                                    <p class="text-[10px] text-gray-400 mt-1">Adjusts stock dynamically</p>
                                 </div>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Complaints / Reason</label>
-                                <textarea name="complaints" id="edit-complaints" rows="2" class="block w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm"></textarea>
-                            </div>
-                            <div class="grid grid-cols-3 gap-4">
-                                <div class="col-span-2">
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Treatment / Medicines Given</label>
-                                    <input type="text" name="treatment" id="edit-treatment" class="block w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
-                                    <input type="number" name="quantity" id="edit-quantity" min="0" class="block w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm">
-                                </div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Other Treatment / Remarks</label>
+                                <input type="text" name="other_treatment" id="edit-other-treatment" class="block w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm">
                             </div>
                         </div>
                     </div>
-                    <div class="bg-gray-50 px-6 py-4 flex flex-col sm:flex-row-reverse gap-3">
+                    <div class="bg-gray-50 px-6 py-4 flex flex-col sm:flex-row-reverse gap-3 flex-shrink-0 rounded-b-2xl border-t border-gray-100">
                         <button type="submit" class="w-full sm:w-auto inline-flex justify-center rounded-xl shadow-sm px-6 py-2.5 bg-pup-maroon text-sm font-bold text-white hover:bg-pup-maroonDark transition-colors">Save Details</button>
                         <button type="button" onclick="closeEditRecordModal()" class="w-full sm:w-auto inline-flex justify-center rounded-xl border border-gray-300 shadow-sm px-6 py-2.5 bg-white text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors">Cancel</button>
                     </div>
@@ -440,7 +523,6 @@ try {
         </div>
     </div>
 
-    <!-- Delete Confirmation Modal -->
     <div id="deleteRecordModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div id="deleteRecordOverlay" class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity opacity-0 duration-300" onclick="closeDeleteRecordModal()"></div>
@@ -454,7 +536,7 @@ try {
                             <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10"><i data-lucide="alert-triangle" class="h-6 w-6 text-red-600"></i></div>
                             <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
                                 <h3 class="text-lg leading-6 font-bold text-gray-900">Delete Treatment Record</h3>
-                                <div class="mt-2"><p class="text-sm text-gray-500">Are you sure you want to permanently delete this treatment record? This action cannot be undone.</p></div>
+                                <div class="mt-2"><p class="text-sm text-gray-500">Are you sure you want to permanently delete this treatment record? The dispensed medicine (if any) will automatically be refunded to the inventory.</p></div>
                             </div>
                         </div>
                     </div>
@@ -467,7 +549,6 @@ try {
         </div>
     </div>
 
-    <!-- Logout Modal -->
     <div id="logoutModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div id="logoutModalOverlay" class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity opacity-0 duration-300" aria-hidden="true" onclick="closeLogoutModal()"></div>
@@ -480,7 +561,7 @@ try {
                     </div>
                 </div>
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 flex flex-col sm:flex-row-reverse gap-2">
-                    <a href="../auth/logout.php" class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:w-auto sm:text-sm transition-colors text-center">Sign Out</a>
+                    <a href="../logout.php" class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:w-auto sm:text-sm transition-colors text-center">Sign Out</a>
                     <button type="button" onclick="closeLogoutModal()" class="w-full inline-flex justify-center rounded-xl border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:w-auto sm:text-sm transition-colors">Cancel</button>
                 </div>
             </div>
@@ -564,8 +645,12 @@ try {
             document.getElementById('edit-time-in').value = data.time_in || '';
             document.getElementById('edit-time-out').value = data.time_out || '';
             document.getElementById('edit-complaints').value = data.complaints || data.service_reason || '';
-            document.getElementById('edit-treatment').value = data.treatment || '';
-            document.getElementById('edit-quantity').value = data.quantity || '';
+            
+            // Setup Medicine, Qty and Other Text
+            document.getElementById('edit-med-select').value = data.medicine_id || '';
+            document.getElementById('edit-med-qty').value = data.quantity || '';
+            handleEditMedSelect(); // Trigger state change
+            document.getElementById('edit-other-treatment').value = data.other_treatment || data.treatment || '';
 
             const m = document.getElementById('editRecordModal');
             m.classList.remove('hidden');
@@ -582,6 +667,19 @@ try {
             document.getElementById('editRecordPanel').classList.replace('translate-y-0', 'translate-y-4');
             document.getElementById('editRecordPanel').classList.replace('sm:scale-100', 'sm:scale-95');
             setTimeout(() => document.getElementById('editRecordModal').classList.add('hidden'), 300);
+        }
+
+        // Logic for Edit Form Medicine Selection
+        function handleEditMedSelect() {
+            const select = document.getElementById('edit-med-select');
+            const qtyInput = document.getElementById('edit-med-qty');
+            
+            if (select.value) {
+                qtyInput.disabled = false;
+            } else {
+                qtyInput.disabled = true;
+                qtyInput.value = '';
+            }
         }
 
         // Delete Record Modal

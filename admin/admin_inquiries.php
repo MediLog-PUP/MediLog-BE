@@ -2,9 +2,11 @@
 session_start();
 require '../db_connect.php';
 
+// GUARANTEE CORRECT TIMEZONE FOR REAL-TIME DATES (PHILIPPINES)
 date_default_timezone_set('Asia/Manila');
 try { $pdo->exec("SET time_zone = '+08:00'"); } catch (Exception $e) {}
 
+// Allow BOTH admin and super_admin
 if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'faculty', 'super_admin'])) {
     header("Location: ../auth/facultylogin.php");
     exit();
@@ -15,7 +17,8 @@ $is_super_admin = ($_SESSION['role'] === 'super_admin');
 $is_chat_selected = isset($_GET['student_id']);
 $active_chat_id = isset($_GET['student_id']) ? intval($_GET['student_id']) : null;
 
-if (isset($_GET['ajax_fetch_chat']) && $active_chat_id) {  
+// Handle AJAX Fetching of Messages (Polling)
+if (isset($_GET['ajax_fetch_chat']) && $active_chat_id) {
     $msgStmt = $pdo->prepare("
         SELECT m.*, u.role as sender_role, u.full_name as sender_name 
         FROM messages m 
@@ -54,6 +57,7 @@ if (isset($_GET['ajax_fetch_chat']) && $active_chat_id) {
     exit;
 }
 
+// Handle AJAX Sending of Message
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ajax_send_msg']) && $active_chat_id) {
     $msg = trim($_POST['message']);
     if (!empty($msg)) {
@@ -78,6 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ajax_send_msg']) && $a
     exit();
 }
 
+// Regular Page Load Initialization
 $stmt = $pdo->prepare("SELECT full_name, profile_pic FROM users WHERE id = ?");
 $stmt->execute([$admin_id]);
 $user = $stmt->fetch();
@@ -158,10 +163,11 @@ if ($active_chat_id) {
             <a href="patient_records.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="users" class="h-5 w-5"></i> Patient Records</a>
             <a href="admin_treatment_records.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="clipboard-list" class="h-5 w-5"></i> Treatment Records</a>
             <a href="admin_appointments.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="calendar" class="h-5 w-5"></i> Appointments</a>
+            <a href="admin_schedule.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="clock" class="h-5 w-5"></i> Clinic Schedule</a>
             <a href="admin_clearance.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="file-check-2" class="h-5 w-5"></i> Clearances</a>
             <a href="admin_inquiries.php" class="flex items-center gap-3 px-4 py-3 bg-pup-maroon text-white rounded-xl font-medium transition-colors shadow-sm"><i data-lucide="message-square" class="h-5 w-5"></i> Inquiries</a>
             <a href="admin_profile.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="user-cog" class="h-5 w-5"></i> Profile</a>
-            <a href="super_admin_users.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="shield-alert" class="h-5 w-5"></i> Admin Management</a>
+            <a href="super_admin_users.php" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-xl font-medium transition-colors"><i data-lucide="shield-alert" class="h-5 w-5"></i> Faculty Management</a>
         </nav>
         <div class="p-4 border-t border-gray-800">
             <button onclick="openLogoutModal()" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-red-900/50 hover:text-red-400 rounded-xl font-medium transition-colors w-full text-left"><i data-lucide="log-out" class="h-5 w-5"></i> Sign Out</button>
@@ -173,6 +179,7 @@ if ($active_chat_id) {
             <a href="admin_dashboard.php" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors"><i data-lucide="layout-dashboard" class="h-5 w-5"></i><span class="text-[10px] font-medium mt-1">Home</span></a>
             <a href="patient_records.php" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors"><i data-lucide="users" class="h-5 w-5"></i><span class="text-[10px] font-medium mt-1">Patients</span></a>
             <a href="admin_appointments.php" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors"><i data-lucide="calendar" class="h-5 w-5"></i><span class="text-[10px] font-medium mt-1">Appts</span></a>
+            <a href="admin_schedule.php" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors"><i data-lucide="clock" class="h-5 w-5"></i><span class="text-[10px] font-medium mt-1">Schedule</span></a>
             <a href="admin_inquiries.php" class="flex flex-col items-center p-2.5 min-w-[72px] text-pup-maroon transition-colors relative"><i data-lucide="message-square" class="h-5 w-5"></i><span class="text-[10px] font-medium mt-1">Chat</span><span class="absolute top-0 w-8 h-1 bg-pup-maroon rounded-b-md"></span></a>
             <a href="admin_profile.php" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors"><i data-lucide="user-cog" class="h-5 w-5"></i><span class="text-[10px] font-medium mt-1">Profile</span></a>
             <a href="super_admin_users.php" class="flex flex-col items-center p-2.5 min-w-[72px] text-gray-500 hover:text-pup-maroon transition-colors"><i data-lucide="shield-alert" class="h-5 w-5"></i><span class="text-[10px] font-medium mt-1">Admins</span></a>
@@ -286,7 +293,7 @@ if ($active_chat_id) {
                     </div>
                 </div>
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 flex flex-col sm:flex-row-reverse gap-2">
-                    <a href="../auth/logout.php" class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:w-auto sm:text-sm transition-colors text-center">Sign Out</a>
+                    <a href="../logout.php" class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:w-auto sm:text-sm transition-colors text-center">Sign Out</a>
                     <button type="button" onclick="closeLogoutModal()" class="w-full inline-flex justify-center rounded-xl border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:w-auto sm:text-sm transition-colors">Cancel</button>
                 </div>
             </div>
@@ -302,6 +309,7 @@ if ($active_chat_id) {
         const chatBox = document.getElementById("chat-container");
         if(chatBox) chatBox.scrollTop = chatBox.scrollHeight;
 
+        // Fetch Messages Real-Time (Polling)
         if (activeChatId) {
             setInterval(() => {
                 fetch(`admin_inquiries.php?student_id=${activeChatId}&ajax_fetch_chat=1`)

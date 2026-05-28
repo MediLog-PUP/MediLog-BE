@@ -30,6 +30,22 @@ if (!empty($user['profile_pic']) && $user['profile_pic'] !== 'default.png') {
     }
 }
 
+// --- NEW: Auto-create schedule tables and fetch settings ---
+$pdo->exec("CREATE TABLE IF NOT EXISTS clinic_hours (id INT AUTO_INCREMENT PRIMARY KEY, start_time TIME, end_time TIME)");
+$check = $pdo->query("SELECT COUNT(*) FROM clinic_hours")->fetchColumn();
+if ($check == 0) {
+    $pdo->exec("INSERT INTO clinic_hours (start_time, end_time) VALUES ('08:00:00', '17:00:00')");
+}
+$pdo->exec("CREATE TABLE IF NOT EXISTS unavailable_dates (id INT AUTO_INCREMENT PRIMARY KEY, closed_date DATE, reason VARCHAR(255))");
+
+$clinic_hours = $pdo->query("SELECT * FROM clinic_hours LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+$unavailable_dates = $pdo->query("SELECT * FROM unavailable_dates WHERE closed_date >= CURDATE()")->fetchAll(PDO::FETCH_ASSOC);
+
+// Fetch all future booked appointments to gray out specific time slots
+$apptQuery = $pdo->query("SELECT appointment_date, appointment_time FROM appointments WHERE status != 'Cancelled' AND status != 'Rejected' AND appointment_date >= CURDATE()");
+$booked_appts = $apptQuery->fetchAll(PDO::FETCH_ASSOC);
+// --- END NEW ---
+
 // Handle Appointment Booking
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['service'], $_POST['appointment_date'], $_POST['appointment_time'])) {
     $service = $_POST['service'];
@@ -249,11 +265,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['service'], $_POST['app
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-8">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Appointment Date</label>
-                                <input type="date" name="appointment_date" class="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm" required min="<?= date('Y-m-d') ?>">
+                                <input type="date" id="appointment_date" name="appointment_date" class="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm" required min="<?= date('Y-m-d') ?>">
+                                <p id="date-error" class="hidden mt-2 text-xs text-red-600 font-bold bg-red-50 p-2 rounded-lg border border-red-100"></p>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Preferred Time</label>
-                                <input type="time" name="appointment_time" class="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm" required>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Preferred Time (1 Hour Slot)</label>
+                                <select id="appointment_time" name="appointment_time" class="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm bg-white" required disabled>
+                                    <option value="" disabled selected>Select a date first...</option>
+                                </select>
                             </div>
                         </div>
 
@@ -285,7 +304,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['service'], $_POST['app
                     </div>
                 </div>
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 flex flex-col sm:flex-row-reverse gap-2">
-                    <a href="../auth/logout.php" class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:w-auto sm:text-sm transition-colors text-center">Sign Out</a>
+                    <a href="../logout.php" class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:w-auto sm:text-sm transition-colors text-center">Sign Out</a>
                     <button type="button" onclick="closeLogoutModal()" class="w-full inline-flex justify-center rounded-xl border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:w-auto sm:text-sm transition-colors">Cancel</button>
                 </div>
             </div>
@@ -319,6 +338,93 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['service'], $_POST['app
                 }
             });
         });
+
+        // --- NEW: Dynamic Date & Time Slot Logic ---
+        const clinicHours = <?= json_encode($clinic_hours); ?>;
+        const closedDates = <?= json_encode($unavailable_dates); ?>;
+        const bookedAppts = <?= json_encode($booked_appts); ?>;
+        
+        const dateInput = document.getElementById('appointment_date');
+        const timeSelect = document.getElementById('appointment_time');
+        const dateError = document.getElementById('date-error');
+
+        dateInput.addEventListener('change', function() {
+            dateError.classList.add('hidden');
+            timeSelect.innerHTML = '<option value="" disabled selected>Select a time slot...</option>';
+            timeSelect.disabled = true;
+
+            if (!this.value) return;
+
+            const selectedDateStr = this.value;
+            // Parse date securely ignoring local timezone shifts that might alter the day
+            const parts = selectedDateStr.split('-');
+            const selectedDate = new Date(parts[0], parts[1] - 1, parts[2]); 
+            const day = selectedDate.getDay();
+
+            // 1. Block Weekends
+            if (day === 0 || day === 6) {
+                dateError.innerText = "The clinic is closed on weekends (Saturday & Sunday). Please select a weekday.";
+                dateError.classList.remove('hidden');
+                this.value = '';
+                return;
+            }
+
+            // 2. Block Custom Admin Dates
+            const isBlocked = closedDates.find(d => d.closed_date === selectedDateStr);
+            if (isBlocked) {
+                dateError.innerText = `The clinic is closed on this date (${isBlocked.reason || 'Unavailable'}).`;
+                dateError.classList.remove('hidden');
+                this.value = '';
+                return;
+            }
+
+            // 3. Generate 1-Hour Time Slots and Gray Out Booked Ones
+            timeSelect.disabled = false;
+            let startH = parseInt(clinicHours.start_time.split(':')[0]);
+            let endH = parseInt(clinicHours.end_time.split(':')[0]);
+
+            let hasAvailableSlots = false;
+
+            for (let h = startH; h < endH; h++) {
+                // Format the DB value (e.g. 09:00:00)
+                const slotValue = h.toString().padStart(2, '0') + ':00:00';
+                
+                // Format UI display strings
+                const displayH = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+                const ampm = h >= 12 ? 'PM' : 'AM';
+                
+                const nextH = h + 1;
+                const nextDisplayH = nextH > 12 ? nextH - 12 : (nextH === 0 ? 12 : nextH);
+                const nextAmpm = nextH >= 12 ? 'PM' : 'AM';
+                
+                const displayStr = `${displayH}:00 ${ampm} - ${nextDisplayH}:00 ${nextAmpm}`;
+
+                // Check if this specific date and time is already in the DB
+                const isBooked = bookedAppts.some(a => a.appointment_date === selectedDateStr && a.appointment_time === slotValue);
+
+                const option = document.createElement('option');
+                option.value = slotValue;
+                
+                if (isBooked) {
+                    option.disabled = true;
+                    option.innerText = displayStr + " (Already Booked)";
+                    option.className = "text-gray-400 bg-gray-50 italic"; // Gray it out physically
+                } else {
+                    option.innerText = displayStr;
+                    hasAvailableSlots = true;
+                }
+                timeSelect.appendChild(option);
+            }
+
+            if (!hasAvailableSlots) {
+                dateError.innerText = "All appointment slots for this date are fully booked. Please choose another date.";
+                dateError.classList.remove('hidden');
+                this.value = '';
+                timeSelect.innerHTML = '<option value="" disabled selected>Fully booked</option>';
+                timeSelect.disabled = true;
+            }
+        });
+        // --- END NEW ---
     </script>
 </body>
 </html>
