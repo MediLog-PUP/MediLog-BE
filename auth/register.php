@@ -143,7 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         <div class="mt-8 text-center border-t border-gray-100 pt-6">
             <p class="text-sm text-gray-500">
-                Already have an account? <a href="auth/studentlogin.php" class="font-bold text-pup-maroon hover:underline">Sign in here</a>
+                Already have an account? <a href="studentlogin.php" class="font-bold text-pup-maroon hover:underline">Sign in here</a>
             </p>
         </div>
     </div>
