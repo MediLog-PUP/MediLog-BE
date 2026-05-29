@@ -1,16 +1,16 @@
 <?php
 session_start();
 
-header("Cache-Control: no-cache, no-store, must-revalidate"); 
-header("Pragma: no-cache"); 
-header("Expires: 0"); 
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
 
 if (isset($_SESSION['user_id']) && isset($_SESSION['role']) && $_SESSION['role'] === 'student') {
     header("Location: ../student/student_dashboard.php");
     exit();
 }
 
-require '../db_connect.php'; 
+require '../db_connect.php';
 $error_msg = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -37,6 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -45,48 +46,78 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
-        tailwind.config = { 
-            theme: { 
-                extend: { 
-                    fontFamily: { sans: ['Inter', 'sans-serif'] }, 
-                    colors: { pup: { maroon: '#880000', maroonDark: '#660000', gold: '#F1B500' } },
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    },
+                    colors: {
+                        pup: {
+                            maroon: '#880000',
+                            maroonDark: '#660000',
+                            gold: '#F1B500'
+                        }
+                    },
                     animation: {
                         'blob': 'blob 7s infinite',
                         'gradient': 'gradient 15s ease infinite',
                     },
                     keyframes: {
                         blob: {
-                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
-                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
-                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
-                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '0%': {
+                                transform: 'translate(0px, 0px) scale(1)'
+                            },
+                            '33%': {
+                                transform: 'translate(30px, -50px) scale(1.1)'
+                            },
+                            '66%': {
+                                transform: 'translate(-20px, 20px) scale(0.9)'
+                            },
+                            '100%': {
+                                transform: 'translate(0px, 0px) scale(1)'
+                            },
                         },
                         gradient: {
-                            '0%': { backgroundPosition: '0% 50%' },
-                            '50%': { backgroundPosition: '100% 50%' },
-                            '100%': { backgroundPosition: '0% 50%' },
+                            '0%': {
+                                backgroundPosition: '0% 50%'
+                            },
+                            '50%': {
+                                backgroundPosition: '100% 50%'
+                            },
+                            '100%': {
+                                backgroundPosition: '0% 50%'
+                            },
                         }
                     }
-                } 
-            } 
+                }
+            }
         }
     </script>
     <style>
         .pattern-move {
-            background-image: radial-gradient(rgba(136, 0, 0, 0.1) 1px, transparent 1px); /* Faint maroon dots */
+            background-image: radial-gradient(rgba(136, 0, 0, 0.1) 1px, transparent 1px);
+            /* Faint maroon dots */
             background-size: 24px 24px;
             animation: patternMove 20s linear infinite;
         }
+
         @keyframes patternMove {
-            0% { background-position: 0 0; }
-            100% { background-position: 48px 48px; }
+            0% {
+                background-position: 0 0;
+            }
+
+            100% {
+                background-position: 48px 48px;
+            }
         }
     </style>
 </head>
+
 <body class="font-sans antialiased bg-gray-50 text-gray-900 min-h-screen flex">
 
     <div class="hidden lg:flex w-1/2 bg-gradient-to-br from-pup-maroonDark via-pup-maroon to-red-900 animate-gradient bg-[length:400%_400%] p-12 flex-col justify-between relative overflow-hidden text-white shadow-[inset_-10px_0_30px_rgba(0,0,0,0.1)]">
-        
+
         <div class="absolute top-0 right-0 -mt-20 -mr-20 w-96 h-96 bg-white opacity-10 rounded-full blur-3xl animate-blob"></div>
         <div class="absolute bottom-0 left-0 -mb-20 -ml-20 w-80 h-80 bg-pup-gold opacity-20 rounded-full blur-3xl animate-blob" style="animation-delay: 2s;"></div>
         <div class="absolute top-1/2 left-1/4 transform -translate-y-1/2 w-72 h-72 bg-red-400 opacity-20 rounded-full blur-3xl animate-blob" style="animation-delay: 4s;"></div>
@@ -107,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </div>
 
     <div class="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-16 md:px-24 py-12 relative bg-gray-50/80 pattern-move">
-        
+
         <div class="absolute inset-0 bg-gradient-to-b from-white via-transparent to-gray-50/90 pointer-events-none"></div>
 
         <a href="../index.php" class="absolute top-8 left-8 sm:left-12 inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-pup-maroon transition-colors group z-10">
@@ -128,7 +159,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <p class="text-gray-500 mt-2 font-medium">Please sign in to your student account.</p>
             </div>
 
-            <?php if($error_msg): ?>
+            <?php if ($error_msg): ?>
                 <div class="bg-red-50 text-red-700 p-4 rounded-xl text-sm font-bold border border-red-200 flex items-center gap-3 mb-6 animate-pulse">
                     <i data-lucide="alert-circle" class="h-5 w-5 flex-shrink-0"></i> <?= htmlspecialchars($error_msg) ?>
                 </div>
@@ -166,7 +197,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </form>
 
             <p class="mt-8 text-center text-sm text-gray-600 font-medium">
-                Don't have an account? <a href="studentregister.php" class="font-bold text-pup-maroon hover:text-pup-maroonDark transition-colors">Register here</a>
+                Don't have an account? <a href="register.php" class="font-bold text-pup-maroon hover:text-pup-maroonDark transition-colors">Register here</a>
             </p>
         </div>
     </div>
@@ -175,4 +206,5 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         lucide.createIcons();
     </script>
 </body>
+
 </html>

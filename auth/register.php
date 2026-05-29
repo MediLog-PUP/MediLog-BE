@@ -26,9 +26,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $error = "Student ID already exists in the system.";
         } else {
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-            
+
             $role = 'student';
-            
+
             $insert = $pdo->prepare("INSERT INTO users (full_name, id_number, email, password, role) VALUES (?, ?, ?, ?, ?)");
             if ($insert->execute([$full_name, $id_number, $email, $hashed_password, $role])) {
                 $success = "Registration successful! You may now log in.";
@@ -41,6 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -49,9 +50,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
-        tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { pup: { maroon: '#880000', maroonDark: '#660000', gold: '#F1B500', goldLight: '#FDE68A' } } } } }
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    },
+                    colors: {
+                        pup: {
+                            maroon: '#880000',
+                            maroonDark: '#660000',
+                            gold: '#F1B500',
+                            goldLight: '#FDE68A'
+                        }
+                    }
+                }
+            }
+        }
     </script>
 </head>
+
 <body class="font-sans antialiased text-gray-800 bg-gray-50 flex items-center justify-center min-h-screen py-10 overflow-x-hidden relative bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
 
     <?php include '../global_loader.php'; ?>
@@ -59,23 +77,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <div class="absolute top-0 w-full h-2 bg-pup-maroon"></div>
 
     <div class="w-full max-w-lg p-8 sm:p-10 bg-white rounded-3xl shadow-xl border border-gray-100 z-10 mx-4">
-        
+
         <h2 class="text-2xl font-extrabold text-gray-900 mb-2">Create Student Account</h2>
         <p class="text-gray-500 text-sm mb-8">Register your student ID to access the MediLog clinic portal.</p>
 
-        <?php if($error): ?>
+        <?php if ($error): ?>
             <div class="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-semibold mb-6 flex items-center gap-2 border border-red-100">
                 <i data-lucide="alert-circle" class="h-5 w-5"></i> <?= htmlspecialchars($error) ?>
             </div>
         <?php endif; ?>
-        <?php if($success): ?>
+        <?php if ($success): ?>
             <div class="bg-green-50 text-green-700 p-4 rounded-xl text-sm font-semibold mb-6 flex items-center gap-2 border border-green-100">
                 <i data-lucide="check-circle-2" class="h-5 w-5"></i> <?= htmlspecialchars($success) ?>
             </div>
         <?php endif; ?>
 
         <form action="register.php" method="POST" class="space-y-4">
-            
+
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Full Name</label>
                 <div class="relative">
@@ -100,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     </div>
                 </div>
             </div>
-            
+
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
@@ -125,7 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         <div class="mt-8 text-center border-t border-gray-100 pt-6">
             <p class="text-sm text-gray-500">
-                Already have an account? <a href="studentlogin.php" class="font-bold text-pup-maroon hover:underline">Sign in here</a>
+                Already have an account? <a href="auth/studentlogin.php" class="font-bold text-pup-maroon hover:underline">Sign in here</a>
             </p>
         </div>
     </div>
@@ -134,4 +152,5 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         lucide.createIcons();
     </script>
 </body>
+
 </html>
