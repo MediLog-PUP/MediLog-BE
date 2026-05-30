@@ -14,23 +14,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $full_name = trim($_POST['full_name']);
     $id_number = trim($_POST['id_number']);
     $email = trim($_POST['email']);
+    $course = $_POST['course'];
+    $section = trim($_POST['section']);
     $password = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
 
     if ($password !== $confirm_password) {
         $error = "Passwords do not match.";
     } else {
+        // Check if ID exists
         $stmt = $pdo->prepare("SELECT id FROM users WHERE id_number = ?");
         $stmt->execute([$id_number]);
         if ($stmt->fetch()) {
             $error = "Student ID already exists in the system.";
         } else {
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-
+            
+            // STRICT ENFORCEMENT: Force the role to be 'student' only.
+            // No faculty or admin accounts can ever be created through this page.
             $role = 'student';
-
-            $insert = $pdo->prepare("INSERT INTO users (full_name, id_number, email, password, role) VALUES (?, ?, ?, ?, ?)");
-            if ($insert->execute([$full_name, $id_number, $email, $hashed_password, $role])) {
+            
+            $insert = $pdo->prepare("INSERT INTO users (full_name, id_number, email, course, section, password, role) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            if ($insert->execute([$full_name, $id_number, $email, $course, $section, $hashed_password, $role])) {
                 $success = "Registration successful! You may now log in.";
             } else {
                 $error = "An error occurred during registration. Please try again.";
@@ -41,7 +46,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 ?>
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -50,50 +54,34 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif']
-                    },
-                    colors: {
-                        pup: {
-                            maroon: '#880000',
-                            maroonDark: '#660000',
-                            gold: '#F1B500',
-                            goldLight: '#FDE68A'
-                        }
-                    }
-                }
-            }
-        }
+        tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { pup: { maroon: '#880000', maroonDark: '#660000', gold: '#F1B500', goldLight: '#FDE68A' } } } } }
     </script>
 </head>
-
 <body class="font-sans antialiased text-gray-800 bg-gray-50 flex items-center justify-center min-h-screen py-10 overflow-x-hidden relative bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
 
+    <!-- Global Loader -->
     <?php include '../global_loader.php'; ?>
 
     <div class="absolute top-0 w-full h-2 bg-pup-maroon"></div>
 
-    <div class="w-full max-w-lg p-8 sm:p-10 bg-white rounded-3xl shadow-xl border border-gray-100 z-10 mx-4">
-
+    <div class="w-full max-w-lg p-8 sm:p-10 bg-white rounded-3xl shadow-xl border border-gray-100 z-10 mx-4 my-8">
+        
         <h2 class="text-2xl font-extrabold text-gray-900 mb-2">Create Student Account</h2>
         <p class="text-gray-500 text-sm mb-8">Register your student ID to access the MediLog clinic portal.</p>
 
-        <?php if ($error): ?>
+        <?php if($error): ?>
             <div class="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-semibold mb-6 flex items-center gap-2 border border-red-100">
                 <i data-lucide="alert-circle" class="h-5 w-5"></i> <?= htmlspecialchars($error) ?>
             </div>
         <?php endif; ?>
-        <?php if ($success): ?>
+        <?php if($success): ?>
             <div class="bg-green-50 text-green-700 p-4 rounded-xl text-sm font-semibold mb-6 flex items-center gap-2 border border-green-100">
                 <i data-lucide="check-circle-2" class="h-5 w-5"></i> <?= htmlspecialchars($success) ?>
             </div>
         <?php endif; ?>
 
         <form action="register.php" method="POST" class="space-y-4">
-
+            
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Full Name</label>
                 <div class="relative">
@@ -119,6 +107,36 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 </div>
             </div>
 
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Course / Program</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400"><i data-lucide="graduation-cap" class="h-4 w-4"></i></div>
+                        <select name="course" required class="block w-full pl-9 pr-8 py-3 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm bg-gray-50 focus:bg-white transition-colors appearance-none">
+                            <option value="" disabled selected>Select Course</option>
+                            <option value="BSECE">BSECE - BS in Electronics Engineering</option>
+                            <option value="BSIE">BSIE - BS in Industrial Engineering</option>
+                            <option value="BSEE">BSEE - BS in Electrical Engineering</option>
+                            <option value="BSP">BSP - BS in Psychology</option>
+                            <option value="BTLED-ICT">BTLED-ICT - BTL Education Major in ICT</option>
+                            <option value="BSEDEN">BSEDEN - BS in Secondary Education Major in English</option>
+                            <option value="BSIT">BSIT - BS in Information Technology</option>
+                            <option value="BSENT">BSENT - BS in Entrepreneurship</option>
+                            <option value="BPAPFM">BPAPFM - BPA Major in Public Financial Management</option>
+                            <option value="DIT/DICT">DIT/DICT - Diploma in IT / ICT</option>
+                            <option value="DOMTLOM">DOMTLOM - DOMT Specialization in Legal Office Mgt</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Year & Section</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400"><i data-lucide="users" class="h-4 w-4"></i></div>
+                        <input type="text" name="section" required placeholder="e.g. 3-1" class="block w-full pl-9 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-pup-maroon focus:border-pup-maroon sm:text-sm bg-gray-50 focus:bg-white transition-colors">
+                    </div>
+                </div>
+            </div>
+            
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
@@ -152,5 +170,4 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         lucide.createIcons();
     </script>
 </body>
-
 </html>
